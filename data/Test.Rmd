@@ -1,0 +1,31 @@
+---
+title: "Test"
+output: html_document
+---
+
+```{r}
+
+install.packages("tidyverse")
+install.packages("tidymodels")
+
+message("test1")
+
+
+```
+
+```{r}
+
+install.packages("readr")
+install.packages("tidyverse")
+library(readr)
+library(tidyverse)
+
+data <- read_csv("EdStats_v01.csv")
+
+data_clean <- data %>%
+  filter(grepl("USA", `Country code`)) %>%
+  slice(-(14:165))
+
+write_csv(data_clean, "EdStats_USA.csv")
+
+```
