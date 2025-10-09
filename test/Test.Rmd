@@ -4,7 +4,8 @@ output: html_document
 ---
 
 ```{r}
-
+install.packages("tidyverse")
+install.packages("tidymodels")
 message("test1")
 
 ```
