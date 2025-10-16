@@ -28,6 +28,77 @@ Interpreting observed trends in relation to historical or policy-level changes s
 
 ***
 
+**Code reading guide**
+Environment & Reproducibility
+This chunk installs (if needed) and/or loads the packages used throughout the notebook-tidyverse for wrangling and visualization, and tidymodels for later modeling.  
+Declaring dependencies up front makes the notebook reproducible in a clean environment, and printing a small message confirms successful execution.
+
+Ingest & Initial Cleaning (USA Scope)
+This chunk:
+- Reads the raw World Bank file (`EdStats_v01.csv`).
+- Filters to the United States (`Country code == "USA"`).
+- Drops the `2024` column because it is entirely missing.
+- Writes the cleaned dataset to `EdStats_USA.csv` so later chunks start with a filtered version.
+
+This simplifies the dataset to the country of interest and removes all-NA columns to keep downstream transformations clean.
+
+Build Analysis Subsets
+We create two thematic subsets aligned to the research questions:
+
+1. Enrollment vs. Attendance
+- Keeps indicators with “total net enrolment rate” or “total net attendance rate.”  
+- Excludes sex-specific series and parity indices.  
+- Drops all-NA columns and saves as `EdStats_attend.csv`.
+
+2. Teachers vs. Compensation
+- Keeps indicators related to teacher counts and teaching staff compensation.  
+- Excludes sex splits and qualification percentages.  
+- Drops all-NA columns and saves as `EdStats_teacher.csv`.
+
+This ensures we work with clean, directly comparable variables.
+
+Enrollment vs. Attendance — Reshape, Visualize & Summarize
+This chunk:
+- Reads `EdStats_attend.csv` and drops sparse early years.  
+- Uses `pivot_longer` to reshape data into tidy `(Year, Value)` format.  
+- Creates two new variables:
+  - **Type**: Attendance vs Enrollment
+  - **Level**: Primary, Middle (Lower Secondary), High (Upper Secondary)
+- Produces faceted line charts comparing trends over time.
+- Generates bar plots to inspect data coverage by variable, year, and level.
+- Calculates summary statistics (mean, median, SD, quartiles, IQR) by `Type × Level`.
+- Saves stats to `tendency_attend.csv`.
+
+**Reading tip:** Look for patterns in the gap between enrollment and attendance. Use coverage plots to check where data is sparse.
+
+Teachers vs. Compensation — Reshape, Visualize & Summarize
+This chunk:
+- Reads `EdStats_teacher.csv` and filters out non-teaching staff data.  
+- Focuses on the most complete years (2014–2021).  
+- Reshapes data with `pivot_longer` and creates:
+  - **Type**: Number of Teachers vs Compensation (% of total expenditure)
+  - **Level**: Pre-Primary, Primary, Middle, High, Undergraduate, Post-Grad
+- Scales teacher counts per 10,000 to make them visually comparable to percentages.
+- Produces faceted line charts for side-by-side trend comparisons.
+- Generates bar plots to examine data coverage by type, year, and level.
+- Calculates summary statistics (mean, median, SD, quartiles, IQR) by `Type × Level`.
+- Saves stats to `tendency_teachers.csv`.
+
+**Reading tip:** Watch for whether compensation shares track with teacher counts over time, or if they diverge.
+
+Interim Takeaways
+- **Enrollment vs. Attendance:** Attendance rates consistently trail enrollment rates at all levels, though the gap varies by level and year. This may point to structural barriers beyond access.  
+- **Teachers vs. Compensation:** Preliminary trends suggest whether compensation shares grow with staffing. Divergences could signal reallocations or coverage differences.
+
+These observations are preliminary and will guide further analysis.
+
+Reproducibility Notes
+All intermediate datasets and figures are written to disk (`EdStats_USA.csv`, `EdStats_attend.csv`, `EdStats_teacher.csv`, and exported PNGs).  
+This allows others to review and re-run later steps without repeating earlier processing.  
+Consider adding `sessionInfo()` at the end to document package versions.
+
+---
+
 **Visualizations and stats:**
 
 ```{r}
