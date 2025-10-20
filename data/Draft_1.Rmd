@@ -54,6 +54,8 @@ library(tidyverse)
 library(plotly)
 library(patchwork)
 library(rmarkdown)
+library(broom)
+library(DT)
 
 opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
 
@@ -398,3 +400,105 @@ These observations are preliminary and will guide further analysis.
 All intermediate datasets and figures are written to disk (`EdStats_USA.csv`, `EdStats_attend.csv`, `EdStats_teacher.csv`, and exported PNGs).  
 This allows others to review and re-run later steps without repeating earlier processing.  
 Consider adding `sessionInfo()` at the end to document package versions.  
+
+## regression
+
+```{r}
+# Pivot from wide (years as columns) to a long format
+data_long <- data_attend %>%
+  pivot_longer(
+    cols = matches("^\\d{4}$"), 
+    names_to = "Year",
+    values_to = "Value",
+    values_drop_na = TRUE 
+  ) %>%
+  mutate(
+    Year = as.numeric(Year),
+    Level = case_when(
+      grepl("primary", `Indicator name`, ignore.case = TRUE)   ~ "Primary",
+      grepl("secondary", `Indicator name`, ignore.case = TRUE) ~ "Secondary",
+      grepl("tertiary", `Indicator name`, ignore.case = TRUE)  ~ "Tertiary",
+      TRUE ~ "Other"
+    ),
+    Type = case_when(
+      grepl("enrolment", `Indicator name`, ignore.case = TRUE)  ~ "Enrollment",
+      grepl("attendance", `Indicator name`, ignore.case = TRUE) ~ "Attendance",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  
+  group_by(Level, Year, Type) %>%
+  summarise(Value = mean(Value, na.rm = TRUE), .groups = "drop") %>%
+  select(Level, Year, Type, Value)
+
+paired_data <- data_long %>%
+  pivot_wider(names_from = Type, values_from = Value) %>%
+  filter(!is.na(Enrollment), !is.na(Attendance)) # Ensure both variables are present
+
+# Display the final prepared data in an interactive table
+datatable(paired_data, options = list(pageLength = 5), caption = "Final Data for Regression")
+
+```
+
+```{r}
+
+# 1) Simple Overall Regression: Does Enrollment predict Attendance across all data?
+m_overall <- lm(Attendance ~ Enrollment, data = paired_data)
+
+datatable(tidy(m_overall), caption = "Overall Model Coefficients (Simple Regression)")
+
+
+# 2) Regressions by School Level: Run a separate model for each level
+# use group_map to apply the lm function to each group and glance to summarize
+glance_by_level <- paired_data %>%
+  group_by(Level) %>%
+  summarise(glance(lm(Attendance ~ Enrollment, data = cur_data())), .groups = "drop")
+
+datatable(glance_by_level %>% select(Level, r.squared, adj.r.squared, p.value, nobs),
+          caption = "Model Quality Summary by School Level")
+
+
+# 3) Multiple Regression with Controls
+# checks if the Enrollment relationship holds even after accounting for Year and Level effects
+m_controls <- lm(Attendance ~ Enrollment + Year + as.factor(Level), data = paired_data)
+datatable(tidy(m_controls), caption = "Multiple Regression with Controls for Year and Level")
+```
+
+```{r}
+# First, create the text labels from our model summary table
+panel_labels <- glance_by_level %>%
+  transmute(
+    Level,
+    label = paste0("R² = ", round(r.squared, 3), "\np = ", signif(p.value, 3))
+  )
+
+# Determine the best position for the labels on each plot
+label_pos <- paired_data %>%
+  group_by(Level) %>%
+  summarise(x = min(Enrollment, na.rm=T), y = max(Attendance, na.rm=T)) %>%
+  left_join(panel_labels, by = "Level")
+
+p_reg <- ggplot(paired_data, aes(x = Enrollment, y = Attendance)) +
+  geom_point(aes(color = Level), alpha = 0.8, show.legend = FALSE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "black") +
+  facet_wrap(~Level, scales = "free") +
+  geom_label(data = label_pos, aes(x = x, y = y, label = label),
+             hjust = 0, vjust = 1, size = 3.5, label.padding = unit(0.3, "lines")) +
+  labs(
+    title = "Attendance vs. Enrollment with OLS Fits by School Level (USA)",
+    subtitle = "Labels show R-squared and model p-value for each level-specific regression",
+    x = "Enrollment Rate (%)", y = "Attendance Rate (%)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(strip.text = element_text(face = "bold"))
+
+print(p_reg)
+```
+
+```{r}
+# Diagnostic Plots for the Main Overall Model (from qtm 220)
+
+par(mfrow = c(2, 2))
+plot(m_overall)
+par(mfrow = c(1, 1)) 
+```
