@@ -3,3 +3,499 @@ title: "just_plot_ideas"
 output: html_document
 ---
 
+```{r setup}
+
+# install.packages("readr")
+# install.packages("knitr")
+# install.packages("tidyverse")
+# install.packages("plotly")
+# install.packages("patchwork")
+# install.packages("rmarkdown")
+# install.packages("broom")
+# install.packages("ggpubr")
+# install.packages("kableExtra")
+library(kableExtra)
+library(readr)
+library(knitr)
+library(tidyverse)
+library(plotly)
+library(patchwork)
+library(rmarkdown)
+library(broom)
+library(ggpubr)
+library(kableExtra)
+
+opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
+
+message("All packages loaded.")
+
+pretty_r2_table <- function(df, caption_text){
+  df %>%
+    kable("html", caption = caption_text) %>%
+    kable_styling(full_width = F) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(3, color = ifelse(df$p.value < 0.05, "red", "black"))
+}
+
+pretty_cor_table <- function(x, y, var1_name = NULL, var2_name = NULL) {
+  cor_res <- cor.test(x, y)
+  tibble(
+    Variable1 = var1_name,
+    Variable2 = var2_name,
+    Correlation = round(cor_res$estimate, 3),
+    p.value = signif(cor_res$p.value, 3)) %>%
+    kable("html", caption = paste0("Correlation: ", var1_name, " vs ", var2_name)) %>%
+    kable_styling(full_width = F) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(4, color = ifelse(cor_res$p.value < 0.05, "red", "black"))
+}
+
+```
+
+```{r}
+#set up data for use
+data <- read_csv("EdStats_v01.csv")
+
+#clean up data to have USA data
+data_clean <- data %>%
+  filter(grepl("USA", `Country code`)) %>%
+  select(-`2024`) #all na
+#make sure no NA cols remain
+colnames(data_clean)[colSums(is.na(data_clean)) == nrow(data_clean)]
+write_csv(data_clean, "EdStats_USA.csv")
+
+#filter for enrollment/attendance info
+data <- read_csv("EdStats_USA.csv")
+data_filter_attend <- data %>%
+  filter(grepl("total net enrolment rate|total net attendance rate", `Indicator name`, ignore.case = TRUE)) %>%
+  filter(!grepl("female|male", `Indicator name`)) %>%
+  filter(!grepl("adjusted gender parity index", `Indicator name`, ignore.case = TRUE)) %>%
+  select(where(~!all(is.na(.)))) %>% view() %>%
+  write_csv("EdStats_attend.csv")
+
+#filter for num teachers and teaching staff compensation info
+data <- read_csv("EdStats_USA.csv")
+data_filter_teacher <- data %>%
+  filter(grepl("teachers in|teaching staff compensation", `Indicator name`, ignore.case = TRUE)) %>%
+  filter(!grepl("female|male", `Indicator name`)) %>%
+  filter(!grepl("percentage of qualified", `Indicator name`, ignore.case = TRUE)) %>%
+  select(where(~!all(is.na(.)))) %>% view() %>%
+  write_csv("EdStats_teacher.csv")
+
+```
+
+```{r}
+#add scatter plot? correlation matrix?
+data_attend <- read_csv("EdStats_attend.csv")
+
+#select years with most observations
+data_attend_years <- data_attend %>%
+  select(!c(`1975`, `1986`, `1987`, `1990`, `1991`, `1993`, `1995`, `1996`, `1999`, `1994`))
+
+#reshape data for visualization
+data_long <- data_attend_years %>%
+  pivot_longer(cols=`2005`:`2022`, names_to="Year", values_to="Value") %>%
+  mutate(
+    Year=as.numeric(Year),
+    Type=case_when(
+      grepl("attendance", `Indicator name`, ignore.case=TRUE) ~ "Attendance",
+      grepl("enrolment", `Indicator name`, ignore.case=TRUE) ~ "Enrollment",
+      TRUE ~ "Other"
+    ),
+    Level=case_when(
+      grepl("primary", `Indicator name`, ignore.case=TRUE) ~ "Elementary School",
+      grepl("lower secondary", `Indicator name`, ignore.case=TRUE) ~ "Middle School",
+      grepl("upper secondary", `Indicator name`, ignore.case=TRUE) ~ "High School",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  filter(Type!="Other", !is.na(Value))
+
+#comparison plots
+#all data line graphs
+p_line_per_school_horizontal <- ggplot(data_long, aes(x=Year, y=Value, color=Type)) +
+  geom_line(size=1.2, na.rm=TRUE) +
+  geom_point(size=2, alpha=0.8) +
+  facet_grid(~Level, scales="fixed", switch="y") +
+  theme_minimal() +
+  theme(
+    strip.background=element_rect(fill="grey90", color=NA),
+    panel.spacing=unit(1, "lines")
+  ) +
+  labs(
+    title="Attendance vs. Enrollment Trends in Schools Over Time (USA)",
+    y="Rate (%)",
+    color="Variable"
+  ) +
+  scale_color_manual(values=c("Attendance"="#FF69B4", "Enrollment"="#3bbf8f")
+  )
+ggsave("line_per_school_horizontal.png", p_line_per_school_horizontal)
+
+p_line_interactive1 <- ggplotly(p_line_per_school_horizontal)
+p_line_interactive1
+
+#enrollment vs attendance 
+data_wide <- data_long %>%
+  pivot_wider(
+    names_from=Type,
+    values_from=Value
+  )
+
+data_combined <- data_wide %>%
+  group_by(Level, Year) %>%
+  summarise(
+    Attendance = Attendance[!is.na(Attendance)],
+    Enrollment = Enrollment[!is.na(Enrollment)]
+  ) %>%
+  ungroup()
+
+###
+
+model <- lm(Enrollment ~ Attendance, data=data_combined)
+# summary(model)  #not significant
+
+by_year_r2 <- data_combined %>%
+    group_by(Year) %>%
+    do(glance(lm(Enrollment ~ Attendance, data=.))) %>%
+    select(Year,r.squared,p.value)
+# by_year_r2  #not significant
+pretty_r2_table(by_year_r2, "R² and p-values by Year (Red = significant, Black = not significant)")
+
+by_schooling_r2 <- data_combined %>%
+    group_by(Level) %>%
+    do(glance(lm(Enrollment ~ Attendance, data=.))) %>%
+    select(Level,r.squared,p.value)
+# by_schooling_r2  #not significant
+pretty_r2_table(by_schooling_r2, "R² and p-values by School Level (Red = significant, Black = not significant)")
+
+####
+
+eqn_text <- paste0(
+  "Trendline: y = ",
+  round(coef(model)[2],3),"x + ",
+  round(coef(model)[1],3),
+  "<br>R² = ",round(summary(model)$r.squared,3),
+  "<br>p = ",signif(summary(model)$coefficients[2,4],3)
+)
+
+enroll_attend_scatter <- ggplot(data_combined, aes(x=Attendance, y=Enrollment)) +
+  geom_point(aes(color=factor(Year)), size=2) +
+  geom_smooth(method=lm, aes(group=1, text=eqn_text)) +
+  theme_minimal() +
+  labs(title="All Attendance vs Enrollment Observations",
+       x="Attendance",
+       y="Enrollment",
+       color="Year")
+
+enroll_attend_scatter_plotly <- ggplotly(enroll_attend_scatter, tooltip=c("text","x","y","color"))
+enroll_attend_scatter_plotly
+
+####
+
+enroll_longitudinal <- ggplot(data_combined, aes(x=Year, y=Enrollment, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title=" Enrollment Observations Longitudinally",
+       x="Year",
+       y="Entrollemnt",
+       color="Level")
+enroll_longitudinal_plotly <- ggplotly(enroll_longitudinal)
+enroll_longitudinal_plotly
+
+pretty_cor_table(data_combined$Year, data_combined$Enrollment, "Year", "Enrollment")
+###
+
+attend_longitudinal <- ggplot(data_combined, aes(x=Year, y=Attendance, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title=" Attendance Observations Longitudinally",
+       x="Year",
+       y="Attendance",
+       color="Level")
+attend_longitudinal_plotly <- ggplotly(attend_longitudinal)
+attend_longitudinal_plotly
+
+pretty_cor_table(data_combined$Year, data_combined$Attendance, "Year", "Attendance")
+
+###
+
+
+#supplemental plots about the data itself
+#maybe shrink them
+p1 <- ggplot(data_long, aes(x=Type, fill=Type)) +
+  geom_bar() +
+  theme_minimal() +
+  labs(title="Count of Attendance vs Enrollment Observations",
+       x="Variable",
+       y="Count") 
+# p1
+p1_plotly <- ggplotly(p1)
+p1_plotly
+ggsave("Observation_counts_variable_attend.png", p1)
+
+p2<-ggplot(data_long, aes(x=factor(Year))) +
+  geom_bar(fill="#c562f0") +
+  theme_minimal() +
+  labs(title="Number of Observations Per Year (All Variables)",
+       x="Year",
+       y="Count")
+# p2
+p2_plotly <- ggplotly(p2)
+p2_plotly
+ggsave("Observation_counts_year_attend.png", p2)
+
+p3<-ggplot(data_long, aes(x=Level, fill=Type)) +
+  geom_bar(position="dodge") +
+  theme_minimal() +
+  labs(title="Number of Observations Per School Level",
+       x="School Level",
+       y="Count",
+       fill="Type")
+# p3
+p3_plotly <- ggplotly(p3)
+p3_plotly
+ggsave("Observation_counts_school_attend.png", p3)
+
+# combine_supp_plots <- p1+p2+p3
+# combine_supp_plots
+
+#tendency measures
+summary_stats <- data_long %>%
+  group_by(Type, Level) %>%
+  summarise(
+    n = n(),                           
+    Mean = mean(Value, na.rm=TRUE),
+    Median = median(Value, na.rm=TRUE),
+    SD = sd(Value, na.rm=TRUE),
+    Variance = var(Value, na.rm=TRUE),
+    Minimum = min(Value, na.rm=TRUE),
+    Maximum = max(Value, na.rm=TRUE),
+    Range = Maximum - Minimum,
+    Q1 = quantile(Value, 0.25, na.rm=TRUE),
+    Q3 = quantile(Value, 0.75, na.rm=TRUE),
+    IQR = Q3 - Q1,
+  ) %>%
+  arrange(Type, Level)  
+
+paged_table(summary_stats)
+write_csv(summary_stats, "tendency_attend.csv")
+
+```
+
+```{r}
+data_teacher <- read_csv("EdStats_teacher.csv") 
+
+#select data with most observations and remove data not using yet
+data_teacher <- data_teacher %>% 
+  filter(!grepl("non-teaching staff", `Indicator name`, ignore.case = TRUE)) %>%
+  filter(!grepl("secondary public institutions (%)", `Indicator name`, ignore.case = TRUE)) %>% #no teacher count
+  select(!c(`1975`, `1986`, `1987`, `1990`, `1991`, `1993`, `1995`, `1996`, `1971`, `1972`, `1973`, `1974`, `1976`, `1977`, `1984`, `1985`, `1998`, `1992`, `1994`, `1998`, `2022`, `1988`))
+
+#Set up data for visualization
+data_teachers_long <- data_teacher %>%
+  pivot_longer(cols=`2014`:`2021`, names_to="Year", values_to="Value") %>%
+  mutate(
+    Year = as.numeric(Year),
+    Type = case_when(
+      grepl("number", `Indicator name`, ignore.case=TRUE) ~ "Number of Teachers",
+      grepl("compensation", `Indicator name`, ignore.case=TRUE) ~ "Compensation % of Total Expenditure",
+      TRUE ~ "Other"
+    ),
+    Level = case_when(
+      grepl("pre-primary", `Indicator name`, ignore.case=TRUE) ~ "Pre-School",
+      grepl("primary", `Indicator name`, ignore.case=TRUE) ~ "Elementary School",
+      grepl("lower secondary", `Indicator name`, ignore.case=TRUE) ~ "Middle School",
+      grepl("upper secondary", `Indicator name`, ignore.case=TRUE) ~ "High School",
+      grepl("post-secondary", `Indicator name`, ignore.case=TRUE) ~ "Undergraduate School", #kinda estimating what post-secondary non-tertiary means
+      grepl("tertiary", `Indicator name`, ignore.case=TRUE) ~ "Post-Grad Schooling",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  filter(Type != "Other", Level != "Other", !is.na(Value))
+
+data_teachers_long <- data_teachers_long %>%
+  mutate(Value_10k = ifelse(Type == "Number of Teachers", Value / 10000, Value))
+
+data_teachers_long <- data_teachers_long %>%
+  mutate(Level = factor(Level, levels = c(
+    "Pre-School",
+    "Elementary School",
+    "Middle School",
+    "High School",
+    "Undergraduate School",
+    "Post-Grad Schooling"
+  )))
+
+teachers <- data_teachers_long %>%
+  filter(Type == "Number of Teachers") %>%
+  select(Level, Year, Teachers_10k = Value_10k) 
+
+compensation <- data_teachers_long %>%
+  filter(Type == "Compensation % of Total Expenditure") %>%
+  select(Level, Year, Compensation_Percent = Value)
+
+comp_teacher <- left_join(teachers, compensation, by = c("Level", "Year"))
+
+###
+
+model_teacher <- lm(Teachers_10k ~ Compensation_Percent, data=comp_teacher)
+# summary(model_teacher)  
+
+by_year_r2_teacher <- comp_teacher %>%
+  group_by(Year) %>%
+  filter(!is.na(Teachers_10k) & !is.na(Compensation_Percent)) %>%
+  do(glance(lm(Teachers_10k ~ Compensation_Percent, data=.))) %>%
+  select(Year, r.squared, p.value)
+by_year_r2_teacher_clean <- by_year_r2_teacher %>%
+  filter(!is.na(r.squared) & !is.na(p.value)) #had nas
+pretty_r2_table(by_year_r2_teacher_clean, "R² and p-values by Year (Red = significant, Black = not significant)")
+
+by_schooling_r2_teacher <- comp_teacher %>%
+  group_by(Level) %>%
+  filter(!is.na(Teachers_10k) & !is.na(Compensation_Percent)) %>%
+  do(glance(lm(Teachers_10k ~ Compensation_Percent, data=.))) %>%
+  select(Level, r.squared, p.value)
+
+by_schooling_r2_teacher_clean <- by_schooling_r2_teacher %>%
+  filter(!is.na(r.squared) & !is.na(p.value)) #had nas
+
+pretty_r2_table(by_schooling_r2_teacher_clean, 
+                "R² and p-values by School Level (Red = significant, Black = not significant)")
+
+####
+
+#comparison plots
+
+eqn_text_teacher <- paste0(
+  "Trendline: y = ",
+  round(coef(model_teacher)[2],3), "x + ",
+  round(coef(model_teacher)[1],3),
+  "<br>R² = ", round(summary(model_teacher)$r.squared,3),
+  "<br>p = ", signif(summary(model_teacher)$coefficients[2,4],3)
+)
+
+teacher_comp_scatter <- ggplot(comp_teacher, aes(x=Compensation_Percent, y=Teachers_10k)) +
+  geom_point(aes(color=factor(Year)), size=2) +
+  geom_smooth(method=lm, aes(group=1, text=eqn_text_teacher)) +
+  theme_minimal() +
+  labs(title="Number of Teachers vs Compensation (All School Levels)",
+       x="Compensation (% of Total Expenditure)",
+       y="Number of Teachers (x10k)",
+       color="Year")
+
+teacher_comp_scatter_plotly <- ggplotly(teacher_comp_scatter, tooltip=c("text","x","y","color"))
+teacher_comp_scatter_plotly
+
+###
+
+p_line_teacher <- ggplot(data_teachers_long, aes(x=Year, y=Value_10k, color=Type)) +
+  geom_line(size=1.2, na.rm=TRUE) +
+  geom_point(size=2, alpha=0.8) +
+  facet_wrap(~Level, nrow=3, scales="fixed") +
+  theme_minimal() +
+  theme(
+    strip.background=element_rect(fill="grey90", color=NA)
+  ) +
+  labs(title="Teachers & Compensation Trends Over Time (USA)",
+       y="Variable",
+       color="Variable") +
+  scale_color_manual(
+    values = c("Number of Teachers" = "#FF69B4",
+               "Compensation % of Total Expenditure" = "#3bbf8f"),
+    labels = c("Number of Teachers\nIn 10,000s", "Teacher Compensation % of\nTotal Instituation Expenditure")
+  ) +
+  scale_x_continuous(breaks = seq(2014, 2021, by = 2))
+ggsave("line_teacherl.png", p_line_teacher)
+
+p_teacher_interactive <- ggplotly(p_line_teacher)
+p_teacher_interactive
+
+###
+
+teachers_longitudinal <- ggplot(comp_teacher, aes(x=Year, y=Teachers_10k, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title="Number of Teachers Longitudinally by School Level",
+       x="Year",
+       y="Number of Teachers (x10k)",
+       color="Level")
+
+teachers_longitudinal_plotly <- ggplotly(teachers_longitudinal)
+teachers_longitudinal_plotly
+
+pretty_cor_table(comp_teacher$Year, comp_teacher$Teachers_10k, "Year", "Number of Teachers")
+##
+###I dont know wtf is happening here. Figure out later #####################################
+# comp_teacher_clean <- comp_teacher %>%
+#   filter(!is.na(Compensation_Percent)) %>%
+#   filter(Level != "Post-Grad Schooling")
+# 
+# compensation_longitudinal <- ggplot(comp_teacher_clean, aes(x=Year, y=Compensation_Percent, color=Level)) +
+#   geom_point(size=2) +
+#   geom_smooth(method=lm, size=1, alpha=0.25) +
+#   theme_minimal() +
+#   labs(title="Teacher Compensation % Longitudinally by School Level",
+#        x="Year",
+#        y="Number of Teachers (x10k)",
+#        color="Level")
+# 
+# compensation_longitudinal_plotly <- ggplotly(compensation_longitudinal)
+# compensation_longitudinal_plotly
+# 
+# pretty_cor_table(comp_teacher$Year, comp_teacher_clean$Compensation_Percent, "Year", "Compensation (%)")
+
+############################################################################################
+###
+
+#supplemental plots 
+# count per Type
+p1 <-ggplot(data_teachers_long, aes(x=Type, fill = Type)) +
+  geom_bar() +
+  theme_minimal() +
+  labs(title="Count of Observations per Type", x="Variable", y="Count")
+p1_plotly <- ggplotly(p1)
+p1_plotly
+ggsave("Observation_counts_variable_teacher.png", p1)
+
+# count per Year
+p2 <- ggplot(data_teachers_long, aes(x=factor(Year))) +
+  geom_bar(fill="#c562f0") +
+  theme_minimal() +
+  labs(title="Number of Observations per Year", x="Year", y="Count")
+p2_plotly <- ggplotly(p2)
+p2_plotly
+ggsave("Observation_counts_year_teacher.png", p2)
+
+# count per Level
+p3<-ggplot(data_teachers_long, aes(x=Level, fill=Type)) +
+  geom_bar(position="dodge") +
+  theme_minimal() +
+  labs(title="Number of Observations per School Level", x="Level", y="Count", fill="Variable")
+p3_plotly <- ggplotly(p3)
+p3_plotly
+ggsave("Observation_counts_school_teacher.png", p3)
+
+#tendency
+summary_stats_teachers <- data_teachers_long %>%
+  group_by(Type, Level) %>%
+  summarise(
+    n = n(),                           
+    Mean = mean(Value, na.rm=TRUE),
+    Median = median(Value, na.rm=TRUE),
+    SD = sd(Value, na.rm=TRUE),
+    Variance = var(Value, na.rm=TRUE),
+    Minimum = min(Value, na.rm=TRUE),
+    Maximum = max(Value, na.rm=TRUE),
+    Range = Maximum - Minimum,
+    Q1 = quantile(Value, 0.25, na.rm=TRUE),
+    Q3 = quantile(Value, 0.75, na.rm=TRUE),
+    IQR = Q3 - Q1,
+  ) %>%
+  arrange(Type, Level)  
+
+paged_table(summary_stats_teachers)
+write_csv(summary_stats_teachers, "tendency_teachers.csv")
+```
