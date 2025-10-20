@@ -47,14 +47,12 @@ Declaring dependencies up front makes the notebook reproducible in a clean envir
 # install.packages("tidyverse")
 # install.packages("plotly")
 # install.packages("patchwork")
-# install.packages("DT")
 # install.packages("rmarkdown")
 library(readr)
 library(knitr)
 library(tidyverse)
 library(plotly)
 library(patchwork)
-library(DT)
 library(rmarkdown)
 
 opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
@@ -188,9 +186,8 @@ p_line_per_school_horizontal <- ggplot(data_long, aes(x=Year, y=Value, color=Typ
   ) +
   scale_color_manual(values=c("Attendance"="#FF69B4", "Enrollment"="#3bbf8f")
   )
-p_line_per_school_horizontal
 ggsave("line_per_school_horizontal.png", p_line_per_school_horizontal)
-#optional interactive plot i can make this so it can be embedded into an html or saved or somethibng if we want that
+
 p_line_interactive1 <- ggplotly(p_line_per_school_horizontal)
 p_line_interactive1
 
@@ -246,14 +243,6 @@ summary_stats <- data_long %>%
     IQR = Q3 - Q1,
   ) %>%
   arrange(Type, Level)  
-
-datatable(
-  summary_stats,
-  options = list(
-    pageLength = 6,
-    scrollX = TRUE
-  )
-)
 
 paged_table(summary_stats)
 write_csv(summary_stats, "tendency_attend.csv")
@@ -343,17 +332,17 @@ p_line_teacher <- ggplot(data_teachers_long, aes(x=Year, y=Value_10k, color=Type
     labels = c("Number of Teachers\nIn 10,000s", "Teacher Compensation % of\nTotal Instituation Expenditure")
   ) +
   scale_x_continuous(breaks = seq(2014, 2021, by = 2))
-p_line_teacher
 ggsave("line_teacherl.png", p_line_teacher)
 
-# optional interactive plot
 p_teacher_interactive <- ggplotly(p_line_teacher)
 p_teacher_interactive
 
+#elemntary/middle/high vs undergrad/post-grad
+
 #supplemental plots 
 # count per Type
-p1 <-ggplot(data_teachers_long, aes(x=Type)) +
-  geom_bar(fill="#c562f0") +
+p1 <-ggplot(data_teachers_long, aes(x=Type, fill = Type)) +
+  geom_bar() +
   theme_minimal() +
   labs(title="Count of Observations per Type", x="Variable", y="Count")
 p1
@@ -393,15 +382,7 @@ summary_stats_teachers <- data_teachers_long %>%
   ) %>%
   arrange(Type, Level)  
 
-datatable(
-  summary_stats_teachers,
-  options = list(
-    pageLength = 8,
-    scrollX = TRUE
-  )
-)
-summary_stats_teachers
-
+paged_table(summary_stats_teachers)
 write_csv(summary_stats_teachers, "tendency_teachers.csv")
 ```
 
