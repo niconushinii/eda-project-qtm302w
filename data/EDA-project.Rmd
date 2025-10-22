@@ -38,7 +38,7 @@ Our analysis draws on the World Bank’s Education Statistics (EdStats) dataset,
 
 We also chose to narrow our analysis to only sex-combined variables, as each of them were present with male-only, female-only, and male and female data. Given the scope of our project, we figured that it would make more sense to explore the sex-combined variables in more depth rather than three less detailed explorations of all three levels. 
 
-Attendance and enrollment jumped out to us as variables of interest due to their potential interaction with one another. Also, we as high school students dueing experienced
+Attendance and enrollment jumped out to us as variables of interest due to their potential interaction with one another. Also, we as high school students during COVID experienced a shift in attendance and enrollment 
 
 Central tendency
 
