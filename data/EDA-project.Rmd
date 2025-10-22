@@ -178,7 +178,8 @@ Focus on whether attendance consistently trails enrollment and whether that gap 
 ```{r}
 data_attend <- read_csv("EdStats_attend.csv")
 
-data_long <- data_attend %>%
+#long format
+data_long_attend <- data_attend %>%
   pivot_longer(cols=`1975`:`2022`, names_to="Year", values_to="Value") %>%
   mutate(
     Year=as.numeric(Year),
@@ -195,6 +196,7 @@ data_long <- data_attend %>%
     )
   ) %>%
   filter(Type!="Other", !is.na(Value))
+write.csv(data_long_attend, "data_long_attend.csv")
 
 #distribution plot options
 #violin plot (too messy i think unfortunately)
@@ -240,37 +242,22 @@ ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
 
 The above plot(s) show the distribution of the data before we focus in on the years with data for both variables. As can be seen in the plot(s), the earlier years contain only enrollment data, while attendance data is added around 2005. Ggplot uses interquartile range (IQR) to calculate outliers, which works for out dual-variable analysis and we do not need to use any multivariable outlier calculation techniques. Any outliers would be marked with red dots in the box plot, and seeing as there are none, we do not need to remove any outliers. 
 
+We have data in long format, and next we make two more dataframes: one in wider format and one in a combined format. The wider dataframe is only wider in comparison to the long df, not the raw data. It separates the "type" column (attendance and enrollment rates) from the long dataframe into two columns, one for enrollment rate and one for attendance rate. However, this creates NA values the rates are not lined up by year and level. Thus, we create a final data combined dataframe that addresses this issue and lines up year, level, attendance, and enrollment. The data combined contains only the values have data for both attendance and enrollment in the same year and level, which leaves us with substantially less data than we started with. However, this is necessary for accurate plotting and calculations.
+
+
 ```{r}
+data_attend <- read_csv("data_long_attend.csv")
+
 #select years with most observations
 data_attend_years <- data_attend %>%
-  select(!c(`1975`, `1986`, `1987`, `1990`, `1991`, `1993`, `1995`, `1996`, `1999`, `1994`))
-
-#reshape data for visualization
-#long format
-data_long <- data_attend_years %>%
-  pivot_longer(cols=`2005`:`2022`, names_to="Year", values_to="Value") %>%
-  mutate(
-    Year=as.numeric(Year),
-    Type=case_when(
-      grepl("attendance", `Indicator name`, ignore.case=TRUE) ~ "Attendance",
-      grepl("enrolment", `Indicator name`, ignore.case=TRUE) ~ "Enrollment",
-      TRUE ~ "Other"
-    ),
-    Level=case_when(
-      grepl("primary", `Indicator name`, ignore.case=TRUE) ~ "Elementary School",
-      grepl("lower secondary", `Indicator name`, ignore.case=TRUE) ~ "Middle School",
-      grepl("upper secondary", `Indicator name`, ignore.case=TRUE) ~ "High School",
-      TRUE ~ "Other"
-    )
-  ) %>%
-  filter(Type!="Other", !is.na(Value))
+  filter(!Year %in% c(1975, 1986, 1987, 1990, 1991, 1993, 1994, 1995, 1996, 1999))
 
 #wide format
-data_wide <- data_long %>%
+data_wide <- data_attend_years %>%
   pivot_wider(
     names_from=Type,
     values_from=Value
-  )
+  ) %>% view()
 
 #combined format
 data_combined <- data_wide %>%
@@ -279,8 +266,14 @@ data_combined <- data_wide %>%
     Attendance = Attendance[!is.na(Attendance)],
     Enrollment = Enrollment[!is.na(Enrollment)]
   ) %>%
-  ungroup()
+  ungroup() %>% view()
 
+```
+
+#add selected distribution plot to show new distribution
+#following chunk contains attendance gap data that needs to be fixed.
+
+```{r}
 # 2) Collapse duplicates within (Year, Level, Type)
 #    (If the catalog has multiple series for the same concept, average them.)
 # collapsed <- data_long %>%
@@ -316,25 +309,34 @@ data_combined <- data_wide %>%
 #     theme_minimal(base_size = 12)
 #   print(p_scatter)
 # }
+```
+
+Next, we calculate R^2 and p-values for attendance and enrollment data combined. This did not return anything significant, and given that we only have three levels (elementary, middle, high school) per year we don't have enough statistical power to run the model filtered in that way. If we filter by school level, we have 5 observations per level. It is important to note that while n=5 is technically valid, it is very low for significance testing and therefore should be taken with a grain of salt. 
+
+Overall, we did not find any significant results so we cannot conclude that enrollment predicts attendance in this dataset.
+
+``` {r}
 
 model <- lm(Enrollment ~ Attendance, data=data_combined)
-# summary(model)  #not significant
 
-by_year_r2 <- data_combined %>%
-    group_by(Year) %>%
-    do(glance(lm(Enrollment ~ Attendance, data=.))) %>%
-    select(Year,r.squared,p.value)
-# by_year_r2  #not significant
-pretty_r2_table(by_year_r2, "R² and p-values by Year (Red = significant, Black = not significant)")
+model_glance <- glance(model) %>%
+  select(r.squared, p.value)
+model_glance <- model_glance %>% mutate(Model = "Enrollment ~ Attendance")
+model_glance <- model_glance %>% select(Model, everything())
+
+pretty_r2_table(model_glance, "R² and p-value for Enrollment ~ Attendance Overall (Red = significant, Black = not significant)")
 
 by_schooling_r2 <- data_combined %>%
     group_by(Level) %>%
     do(glance(lm(Enrollment ~ Attendance, data=.))) %>%
     select(Level,r.squared,p.value)
-# by_schooling_r2  #not significant
+
 pretty_r2_table(by_schooling_r2, "R² and p-values by School Level (Red = significant, Black = not significant)")
 
+```
 
+
+```{r}
 ###
 p_line_per_school_horizontal <- ggplot(data_long, aes(x=Year, y=Value, color=Type)) +
   geom_line(size=1.2, na.rm=TRUE) +
