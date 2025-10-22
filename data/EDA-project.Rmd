@@ -429,7 +429,34 @@ pretty_r2_table(by_schooling_r2, "R² and p-values by School Level (Red = signif
 
 ```{r}
 #regression
+# First, create the text labels from our model summary table
+panel_labels <- glance_by_level %>%
+  transmute(
+    Level,
+    label = paste0("R² = ", round(r.squared, 3), "\np = ", signif(p.value, 3))
+  )
 
+# Determine the best position for the labels on each plot
+label_pos <- data_wide %>%
+  group_by(Level) %>%
+  summarise(x = min(Enrollment, na.rm=T), y = max(Attendance, na.rm=T)) %>%
+  left_join(panel_labels, by = "Level")
+
+p_reg <- ggplot(data_wide, aes(x = Enrollment, y = Attendance)) +
+  geom_point(aes(color = Level), alpha = 0.8, show.legend = FALSE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "black") +
+  facet_wrap(~Level, scales = "free") +
+  geom_label(data = label_pos, aes(x = x, y = y, label = label),
+             hjust = 0, vjust = 1, size = 3.5, label.padding = unit(0.3, "lines")) +
+  labs(
+    title = "Attendance vs. Enrollment with OLS Fits by School Level (USA)",
+    subtitle = "Labels show R-squared and model p-value for each level-specific regression",
+    x = "Enrollment Rate (%)", y = "Attendance Rate (%)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(strip.text = element_text(face = "bold"))
+
+print(p_reg)
 ```
 
 ---
