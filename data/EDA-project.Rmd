@@ -10,32 +10,38 @@ output: html_document
 ### Description of the Project
 
 This project uses the **World Bank’s Education Statistics** dataset to explore long-term trends and relationships among key indicators of the US education system.
-Our goal is to understand how structural aspects of education (access, staffing, and outcomes) have evolved over time and how changes in one variable may influence changes in another.
-We analyze variables across different categories and examine differences between sexes.
-By focusing on longitudinal, cross-national data, we aim to identify potential patterns and meaningful interactions that could inform educational policy and investment.
+Our goal is to understand how certain aspects of education have evolved over time and how changes in one variable may influence changes in another.
+We will analyze each variable across different categories and explore which trends emerge from doing so.
+By focusing on longitudinal, single-nation data, we aim to identify potential patterns and meaningful interactions that could offer insight into how the attendance and enrollment of students has changed over time in the United States public school system. From there, we will draw hypotheses about why these trends may have arisen.
 
 The analysis of various indicators allows us to examine temporal changes and potential external factors that might shape educational outcomes.  
-We selected **two major indicator categories** that reflect different dimensions of the education system:
+We selected **two major indicator categories** that reflect different dimensions of the education system. These indicators will be explored individually and together.
 
-1. **Enrollment Rate vs. Attendance Rate**  
-   We will compare enrollment and attendance rates across different levels of schooling (primary, secondary, tertiary) to test whether higher enrollment leads to consistent attendance over time.
+1. **Enrollment Rate**  
+   We will compare student enrollment rates across different levels of schooling (elementary, middle, and high school) and different years.
 
-2. **Number of Teachers vs. Teaching Staff Compensation**  
-   We will investigate how changes in staffing levels correspond with compensation across educational stages.
+2. **Attendance Rate**  
+   We will also compare student attendance rates across different levels of schooling (elementary, middle, and high school) and different years.
 
 
 ### Motivation
 
-When we were brainstorming datasets to go with, we had difficulty choosing a topic because the possibilities were endless. We looked at several options from public health to climate to economics, but we eventually narrowed it down to education. This is something that all of us are connected to and that our classmates and readers can easily relate to. We initially considered focusing on Emory-specific data but broadened our scope to the World Bank’s Education Statistics for its larger context and long-term coverage.
+When we were brainstorming datasets to work with, we had difficulty choosing a topic because the possibilities were endless. We looked at several options from public health to climate to economics, but we eventually narrowed it down to education. This is something that all of us are connected to and that our classmates and readers can easily relate to. We initially considered focusing on Emory-specific data but broadened our scope to the World Bank’s Education Statistics for its larger context and long-term coverage.
 
-As students at an American university, we were especially interested in examining data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment, attendance, and staffing can reveal whether increased investment in education translates into better participation and equity. This directly relates to us, as college students who have undergone the three main levels of education and were told that our own efforts, most notably in high school, would determine our outcomes later in life. But how much do individual outcomes actually depend on the student, and how much on the school systems and structures that support them?
+As students at an American university, we were especially interested in examining data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment and attendance can reveal whether increased investment in education translates into better participation and equity. This directly relates to us, as college students who have undergone the three main levels of education and were told that our own efforts, most notably in high school, would determine our outcomes later in life. 
 
 ---
 
-#what is this meant to contain
 # 2. Dataset
-- Data Introduction: source, scope, any ethical considerations
-- Explain different variables
+
+Our analysis draws on the World Bank’s Education Statistics (EdStats) dataset, a comprehensive collection of global indicators on education access, participation, efficiency, outcomes, and expenditure. We specifically use the United States subset, covering indicators related to enrollment and  attendance. The data span multiple decades, allowing us an examination of both long-term structural trends and shorter-term policy effects.
+
+We also chose to narrow our analysis to only sex-combined variables, as each of them were present with male-only, female-only, and male and female data. Given the scope of our project, we figured that it would make more sense to explore the sex-combined variables in more depth rather than three less detailed explorations of all three levels. 
+
+Attendance and enrollment jumped out to us as variables of interest due to their potential interaction with one another. Also, we as high school students dueing experienced
+
+Central tendency
+
 
 ---
 
@@ -392,57 +398,6 @@ paged_table(summary_stats)
 ```
 #maybe add some plot showing something noteable about the tendency measures, or otherwise if there are any interesting ones we can color or bold them.
 
-#following chunk contains attendance gap data that needs to be fixed.
-
-```{r}
-# 2) Collapse duplicates within (Year, Level, Type)
-#    (If the catalog has multiple series for the same concept, average them.)
-# collapsed <- data_long %>%
-#   group_by(Level, Year, Type) %>%
-#   summarize(Value = mean(Value, na.rm = TRUE), .groups = "drop")
-
-# 3) Wide format with both columns side-by-side
-# gap_df <- collapsed %>%
-#   pivot_wider(names_from = Type, values_from = Value) %>%
-#   mutate(Gap = Enrollment - Attendance)
-
-# 5) Gap over time (only where both exist)
-# if (any(!is.na(gap_df$Gap))) {
-#   p_gap <- ggplot(gap_df, aes(Year, Gap, color = Level)) +
-#     geom_hline(yintercept = 0, linetype = "dashed") +
-#     geom_line(linewidth = 1, na.rm = TRUE) +
-#     geom_point(size = 1.3, alpha = 0.8) +
-#     labs(title = "Enrollment – Attendance Gap (percentage points)", y = "Gap (pp)", x = "Year") +
-#     theme_minimal(base_size = 12)
-#   print(p_gap)
-# }
-
-# Quick diagnostics (see what exists)
-# print(table(gap_df$Level, useNA = "ifany"))
-# print(summary(gap_df[, c("Enrollment", "Attendance")]))
-# 
-# # If there are no overlapping rows, bail out gracefully
-# if (nrow(drop_na(gap_df, Enrollment, Attendance)) < 2) {
-#   warning("No overlapping Enrollment & Attendance observations after cleaning; skipping correlation and scatter.")
-# } else {
-#   # Correlation and scatter only when data exist
-#   corr_df <- gap_df %>% drop_na(Enrollment, Attendance)
-# 
-#   r_val <- cor(corr_df$Enrollment, corr_df$Attendance, use = "pairwise.complete.obs", method = "pearson")
-#   message(sprintf("Correlation between Enrollment and Attendance: r = %.2f", r_val))
-# 
-#   p_scatter <- ggplot(corr_df, aes(Enrollment, Attendance, color = Level)) +
-#     geom_point(alpha = 0.6) +
-#     geom_smooth(method = "lm", se = FALSE, linewidth = 0.9) +
-#     labs(
-#       title = sprintf("Attendance vs. Enrollment (r = %.2f)", r_val),
-#       x = "Enrollment Rate (%)", y = "Attendance Rate (%)"
-#     ) +
-#     theme_minimal(base_size = 12)
-#   print(p_scatter)
-# }
-```
-
 Next, we calculate R^2 and p-values for attendance and enrollment data combined. This did not return anything significant, and given that we only have three levels (elementary, middle, high school) per year we don't have enough statistical power to run the model filtered in that way. If we filter by school level, we have 5 observations per level. It is important to note that while n=5 is technically valid, it is very low for significance testing and therefore should be taken with a grain of salt. 
 
 Overall, we did not find any significant results so we cannot conclude that enrollment predicts attendance in this dataset.
@@ -474,177 +429,6 @@ pretty_r2_table(by_schooling_r2, "R² and p-values by School Level (Red = signif
 #regression
 
 ```
-
----
-
-# 6. Teachers vs. Compensation — Reshape, Compare, and Quantify
-This section examines how **teacher workforce size** and **compensation** have evolved in the United States from 2014 to 2021.  
-Using `EdStats_teacher.csv`, we identify indicators relating to the **number of teachers** and the **share of educational expenditure allocated to teaching staff compensation**.  
-After filtering out non-teaching staff and qualification percentages, the data are reshaped into tidy long form to create two new analytical variables:
-
-- **Type** — distinguishes between *Number of Teachers* and *Compensation (% of Total Expenditure)*  
-- **Level** — categorizes schooling stages (Pre-Primary → Post-Graduate) for within-level comparison  
-
-Teacher counts are scaled per 10 000 to make them visually comparable to percentages.  
-We then:
-
-- Plot **time-series trends** for each education level to observe whether compensation shares track with staffing growth.  
-- Visualize **coverage patterns** by variable, year, and level to assess reporting consistency.  
-- Compute **summary statistics** (mean, median, standard deviation, quartiles, IQR) for each `Type × Level` combination.  
-- Optionally, calculate **correlations** between teacher counts and compensation levels to assess co-movement.  
-- Export the descriptive table as `tendency_teachers.csv` for reproducibility.  
-
-**Reading tip:**  
-Focus on whether the **compensation share rises or falls** with the **number of teachers**.  
-Parallel upward trends may indicate sustained investment in instructional personnel, while divergence could suggest funding reallocation, changing class sizes, or reporting gaps across education levels.
-
-```{r}
-
-### This is not done
-
-
-# 1) Read & filter (keep only teaching staff; drop qualification % series)
-teacher_raw <- read_csv("EdStats_teacher.csv", show_col_types = FALSE) %>%
-  filter(!str_detect(`Indicator name`, regex("non-?teaching staff", ignore_case = TRUE))) %>%
-  filter(!str_detect(`Indicator name`, regex("percentage of qualified", ignore_case = TRUE)))
-
-# 2) Long format (auto-detect year columns) + standardized labels
-teachers_long0 <- teacher_raw %>%
-  pivot_longer(cols = matches("^\\d{4}$"), names_to = "Year", values_to = "Value") %>%
-  mutate(
-    Year = as.numeric(Year),
-    Type = case_when(
-      str_detect(`Indicator name`, regex("compensation", ignore_case = TRUE)) ~
-        "Compensation % of Total Expenditure",
-      str_detect(`Indicator name`, regex("teachers? in|number of teachers", ignore_case = TRUE)) ~
-        "Number of Teachers",
-      TRUE ~ NA_character_
-    ),
-    Level = case_when(
-      str_detect(`Indicator name`, regex("\\bpre-?primary\\b", ignore_case = TRUE)) ~ "Pre-Primary",
-      str_detect(`Indicator name`, regex("\\bprimary\\b", ignore_case = TRUE)) ~ "Primary",
-      str_detect(`Indicator name`, regex("lower\\s*secondary", ignore_case = TRUE)) ~ "Lower Secondary",
-      str_detect(`Indicator name`, regex("upper\\s*secondary", ignore_case = TRUE)) ~ "Upper Secondary",
-      str_detect(`Indicator name`, regex("\\bsecondary\\b", ignore_case = TRUE)) ~ "Secondary (unspecified)",
-      str_detect(`Indicator name`, regex("\\btertiary\\b|post-?secondary|higher education", ignore_case = TRUE)) ~ "Tertiary",
-      TRUE ~ NA_character_
-    )
-  ) %>%
-  filter(!is.na(Type), !is.na(Level), !is.na(Value))
-
-# 3) Collapse duplicates within (Year, Level, Type) to ensure 1 row per cell
-teachers_long <- teachers_long0 %>%
-  group_by(Level, Year, Type) %>%
-  summarise(Value = mean(Value, na.rm = TRUE), .groups = "drop")
-
-# 4) Scale teacher counts to 10,000s for visual comparability with percentages
-teachers_long <- teachers_long %>%
-  mutate(Value_scaled = if_else(Type == "Number of Teachers", Value / 10000, Value))
-
-# (Optional) order levels for consistent faceting
-lvl_order <- c("Pre-Primary", "Primary", "Lower Secondary", "Upper Secondary",
-               "Secondary (unspecified)", "Tertiary")
-teachers_long <- teachers_long %>%
-  mutate(Level = factor(Level, levels = intersect(lvl_order, unique(Level))))
-
-# ---- A. Time-series trends by level (scaled) ----
-p_line_teacher <- ggplot(teachers_long, aes(x = Year, y = Value_scaled, color = Type)) +
-  geom_line(linewidth = 1.1, na.rm = TRUE) +
-  geom_point(size = 1.7, alpha = 0.8) +
-  facet_wrap(~ Level, ncol = 3, scales = "fixed") +
-  theme_minimal(base_size = 12) +
-  theme(strip.background = element_rect(fill = "grey95", color = NA)) +
-  scale_color_manual(
-    values = c("Number of Teachers" = "#FF69B4",
-               "Compensation % of Total Expenditure" = "#3BBF8F"),
-    labels = c("Number of Teachers (per 10,000)", "Compensation (% of total)")
-  ) +
-  labs(
-    title = "Teachers & Compensation Trends by Level (USA)",
-    y = "Scaled value (Teachers per 10,000; Compensation %)",
-    color = "Series"
-  ) +
-  scale_x_continuous(breaks = pretty(unique(teachers_long$Year)))
-p_line_teacher
-# Interactive view (kept optional for HTML)
-ggplotly(p_line_teacher)
-
-# ---- B. Coverage diagnostics (counts by Type / Year / Level) ----
-p_count_type <- ggplot(teachers_long, aes(x = Type)) +
-  geom_bar(fill = "#c562f0") +
-  theme_minimal(base_size = 12) +
-  labs(title = "Coverage: Count of Observations by Type", x = "Series", y = "Count")
-p_count_type
-
-p_count_year <- ggplot(teachers_long, aes(x = factor(Year))) +
-  geom_bar(fill = "#c562f0") +
-  theme_minimal(base_size = 12) +
-  labs(title = "Coverage: Observations per Year (all levels)", x = "Year", y = "Count")
-p_count_year
-
-p_count_level <- ggplot(teachers_long, aes(x = Level, fill = Type)) +
-  geom_bar(position = "dodge") +
-  theme_minimal(base_size = 12) +
-  labs(title = "Coverage: Observations by Level and Type", x = "Level", y = "Count", fill = "Series")
-p_count_level
-
-# ---- C. Correlation between staffing and compensation (where both exist) ----
-# Wide table on the *scaled* values so axes are comparable
-wide_tc <- teachers_long %>%
-  select(Level, Year, Type, Value_scaled) %>%
-  pivot_wider(names_from = Type, values_from = Value_scaled)
-
-# overall (pooled) correlation with guard
-corr_tbl <- tibble::tibble()
-
-valid_overall <- wide_tc %>%
-  mutate(valid = complete.cases(`Number of Teachers`, `Compensation % of Total Expenditure`)) %>%
-  filter(valid)
-
-if (nrow(valid_overall) >= 3) {
-  overall_r <- cor(valid_overall$`Number of Teachers`,
-                   valid_overall$`Compensation % of Total Expenditure`,
-                   use = "complete.obs", method = "pearson")
-  corr_tbl <- bind_rows(corr_tbl, tibble(Level = "All levels (pooled)", r = overall_r))
-}
-
-# by-level correlations (no cur_data(); compute within each group)
-by_level_r <- wide_tc %>%
-  group_by(Level) %>%
-  summarise(
-    n_pairs = sum(complete.cases(`Number of Teachers`, `Compensation % of Total Expenditure`)),
-    r = ifelse(
-      n_pairs >= 3,
-      cor(`Number of Teachers`, `Compensation % of Total Expenditure`,
-          use = "complete.obs", method = "pearson"),
-      NA_real_
-    ),
-    .groups = "drop"
-  ) %>%
-  filter(!is.na(r))
-
-corr_tbl <- bind_rows(corr_tbl, by_level_r %>% select(Level, r))
-corr_tbl
-
-# ---- D. Summary statistics (per Type × Level) ----
-summary_stats_teachers <- teachers_long %>%
-  group_by(Type, Level) %>%
-  summarise(
-    n = n(),
-    mean_value = mean(Value, na.rm = TRUE),
-    median_value = median(Value, na.rm = TRUE),
-    sd_value = sd(Value, na.rm = TRUE),
-    min_value = min(Value, na.rm = TRUE),
-    max_value = max(Value, na.rm = TRUE),
-    IQR = IQR(Value, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  arrange(Type, Level)
-
-write_csv(summary_stats_teachers, "tendency_teachers.csv")
-summary_stats_teachers
-```
-
 
 ---
 
