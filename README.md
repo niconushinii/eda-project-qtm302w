@@ -1,31 +1,66 @@
-# eda-project-qtm302w
-QTM 302W EDA Project group 3
+# QTM 302W EDA Project — Group 3  
+### *Education in Context: Exploring Long-Term Trends in U.S. School Indicators*  
+
+**Course:** ENGRD/QTM 302W — Technical Writing for Data Science  
+**Date:** October 2025  
+
 ---
-title: "Draft1"
-output: html_document
+
+## Description  
+This project uses the **World Bank’s Education Statistics** dataset to explore long-term trends and relationships among key indicators of the U.S. education system.  
+Our goal is to understand how structural aspects of education — such as access, staffing, and outcomes — have evolved over time, and how changes in one variable may (or may not) predict changes in another.  
+
+The dataset spans several decades and allows us to analyze how participation and resource allocation shift across **school levels** (primary, secondary, tertiary) and **years** (2005–2022).  
+By combining exploratory data analysis and regression modeling, we assess the strength and direction of relationships among variables that represent student participation and institutional investment.
+
 ---
 
-**Description of the project:**
-This project uses the World Bank’s Education Statistics dataset to explore long-term trends and relationships among key indicators of the US education system. Our goal is to understand how structural aspects of education (access, staffing, and outcomes) have evolved over time and how changes in one variable may influence changes in another. We will analyze variables in different categories and see differences between sexes. By focusing on longitudinal, cross-national data, we aim to identify potential patterns and meaningful interactions that could inform educational policy and investment.
+## Analytical Focus  
 
-The analysis of various indicators will allow us to examine temporal changes and potential external factors that might shape different educational outcomes. We selected three major indicator categories that reflect different dimensions of the education system:
-Enrollment rate vs Attendance rate
-We will compare enrollment and attendance rates across different levels of schooling (primary, secondary, tertiary) to examine whether higher enrollment leads to consistent attendance over time.
-Number of teachers vs Teaching staff compensation
-We will investigate how changes in staffing levels correspond with compensation levels across educational stages.
-Educational attainment rate
-We will track changes in the proportion of the population and see differences between sexes achieving different levels of education to understand broader societal progress and disparities.
-Motivation
-When we were brainstorming datasets to go with, we had difficulty choosing a topic because the possibilities were endless. We looked at several options from public health to climate to economics, but we eventually narrowed it down to education, which was something that all of us are connected to and that our classmates and readers could easily relate to. We initially considered focusing on Emory-specific data but broadened our scope to the World Bank’s Education Statistics for its larger context and long-term coverage.
-As students at an American university, we were especially interested in examining data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment, attendance, and staffing can reveal whether increased investment in education translates into better participation and equity. This directly relates to us, as college students who have undergone the three main levels of education and were told that our own efforts, most notably in high school, would determine our outcomes later in life. But how much do individual outcomes actually depend on the student, and how much on the school systems and structures that support them?
+We selected three major indicator categories representing different dimensions of the education system:
 
-***
+### 1. Enrollment Rate vs Attendance Rate  
+- Investigates whether higher enrollment corresponds with consistent attendance over time.  
+- Includes pre- and post-filtering distribution checks, correlation analysis, and linear regressions by school type.  
+- **Finding:** Despite high average rates, correlations are weak and statistically insignificant, suggesting that increased enrollment does not reliably predict attendance.  
 
-**Structure:**
-We will perform exploratory data analysis (EDA) in R using the tidyverse suite of libraries. Our analysis will include:
-Cleaning and reshaping selected indicators
-Visualizing trends across time and education levels
-Examining relationships among variables through summary statistics and correlation plots
-Interpreting observed trends in relation to historical or policy-level changes such as shifts in federal funding
+### 2. Number of Teachers vs Teaching Staff Compensation  
+- Explores whether compensation levels rise proportionally with staffing levels across school stages.  
+- Includes time-series plots, central tendency measures, and discussion of funding patterns.  
+- **Finding:** Teacher counts remain stable while compensation increases slightly, implying that funding shifts may not directly affect staffing levels.  
 
-***
+### 3. (Planned) Educational Attainment by Sex  
+- Tracks differences in educational outcomes between male and female populations over time.  
+- Extends the analysis to measure broader social progress and equity if data coverage allows.  
+
+---
+
+## Motivation  
+When brainstorming datasets, we initially considered public health and climate data but chose **education** because it is something we all experience and can interpret meaningfully.  
+Education is a universal and policy-relevant domain, and its trends often reflect larger social and economic forces.  
+
+As students in an American university, we were especially drawn to exploring national-level data.  
+U.S. education policy and access have changed dramatically in recent decades, making it an ideal context for studying how participation and resource allocation interact.  
+This project also gave us a chance to reflect on our own experiences — *how much do individual outcomes depend on student effort versus institutional support?*  
+
+---
+
+## Methods  
+Our exploratory data analysis (EDA) was conducted in **R** using the `tidyverse`, `plotly`, and `broom` libraries.  
+Following best practices for reproducible research, our notebook includes:  
+- Data cleaning and restructuring into tidy long-form tables  
+- Visual exploration of **pre- and post-filter distributions**  
+- Descriptive statistics (mean, median, variance, quartiles, IQR)  
+- Correlation and regression modeling to test variable relationships  
+- Interactive visualizations using `plotly` for longitudinal comparisons  
+
+---
+
+## Key Findings  
+- **High enrollment does not guarantee consistent attendance.**  
+  Regression models show weak and statistically insignificant relationships between the two.  
+- **Attendance rates have gradually declined**, especially in elementary schools, likely reflecting disruptions such as COVID-19.  
+- **Teacher compensation has risen slightly while staffing remained stable**, suggesting policy or funding changes independent of employment levels.  
+- Overall, **education indicators remain high but weakly related**, revealing structural independence among access, participation, and resource metrics.  
+
+---
