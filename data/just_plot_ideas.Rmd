@@ -54,7 +54,7 @@ pretty_cor_table <- function(x, y, var1_name = NULL, var2_name = NULL) {
 
 ```{r}
 #set up data for use
-data <- read_csv("EdStats_v01.csv")
+data <- read_csv("EdStats_v01.csv", show_col_types=FALSE, col_types=cols(`2024`=col_skip()))
 
 #clean up data to have USA data
 data_clean <- data %>%
