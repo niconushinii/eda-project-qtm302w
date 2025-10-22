@@ -50,7 +50,7 @@ Our analysis will include the following components:
 
 The "r setup" code chunk applies to every code chunk in the file, so this will allow us to create a "global environment" to use in our analysis. First, we install and load all necessary packages, then set global options for reproducibility and consistent output formatting. We also create functions that will streamline table formatting for data any outputs of interest.
 
-```{r setup}
+```{r setup, results='hide', message=FALSE, warning=FALSE}
 # install.packages("kableExtra")
 # install.packages("tidyverse")
 # install.packages("readr")
@@ -176,31 +176,36 @@ From these, we compute a new variable representing the **attendance gap** (*Enro
 Focus on whether attendance consistently trails enrollment and whether that gap changes across levels or decades. High correlation indicates structural progress—both metrics rising together—while a persistent positive gap suggests that access alone does not guarantee participation.
 
 ```{r}
-data_attend <- read_csv("EdStats_attend.csv")
+data_attend <- read_csv("EdStats_attend.csv", show_col_types = FALSE)
 
 #long format
 data_long_attend <- data_attend %>%
   pivot_longer(cols=`1975`:`2022`, names_to="Year", values_to="Value") %>%
   mutate(
-    Year=as.numeric(Year),
-    Type=case_when(
+    Year = as.numeric(Year),
+    Type = case_when(
       grepl("attendance", `Indicator name`, ignore.case=TRUE) ~ "Attendance",
       grepl("enrolment", `Indicator name`, ignore.case=TRUE) ~ "Enrollment",
       TRUE ~ "Other"
     ),
-    Level=case_when(
+    Level = case_when(
       grepl("primary", `Indicator name`, ignore.case=TRUE) ~ "Elementary School",
       grepl("lower secondary", `Indicator name`, ignore.case=TRUE) ~ "Middle School",
       grepl("upper secondary", `Indicator name`, ignore.case=TRUE) ~ "High School",
       TRUE ~ "Other"
     )
   ) %>%
-  filter(Type!="Other", !is.na(Value))
+  filter(Type != "Other", !is.na(Value)) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School")),
+    Type = factor(Type, levels = c("Attendance", "Enrollment"))
+  )
 write.csv(data_long_attend, "data_long_attend.csv")
+
 
 #distribution plot options
 #violin plot (too messy i think unfortunately)
-ggplot(data_long, aes(x=factor(Year, levels=sort(unique(Year))), y=Value, fill=Type)) +
+ggplot(data_long_attend, aes(x=factor(Year, levels=sort(unique(Year))), y=Value, fill=Type)) +
   geom_violin(alpha=0.5, trim=FALSE) +
   theme_minimal() +
   labs(
@@ -212,7 +217,7 @@ ggplot(data_long, aes(x=factor(Year, levels=sort(unique(Year))), y=Value, fill=T
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #scatter plot. i added a little bit of jitter cuz there were some overlapping points
-ggplot(data_long, aes(x=factor(Year), y=Value, color=Type)) +
+ggplot(data_long_attend, aes(x=factor(Year), y=Value, color=Type)) +
   geom_jitter(width=0.1, alpha=0.7, size=3) +
   theme_minimal() +
   labs(
@@ -224,7 +229,7 @@ ggplot(data_long, aes(x=factor(Year), y=Value, color=Type)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #boxplot and jittered data. too cluttered i think. 
-ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
+ggplot(data_long_attend, aes(x=factor(Year), y=Value, fill=Type)) +
   geom_boxplot(alpha=0.3, outlier.shape = 16, outlier.color="red") +
   geom_jitter(aes(color=Type), width=0.1, size=2) +
   theme_minimal() +
@@ -232,7 +237,7 @@ ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
   theme(axis.text.x = element_text(angle=45, hjust=1))
 
 #just boxplot. i think still too cluttered. we have no outliers anyways
-ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
+ggplot(data_long_attend, aes(x=factor(Year), y=Value, fill=Type)) +
   geom_boxplot(alpha=0.5, outlier.shape = 16, outlier.color="red") +
   theme_minimal() +
   labs(title="Distribution of Attendance vs Enrollment Rates by Year (Pre-filtering)", x="Year", y="Rate (%)") +
@@ -246,31 +251,147 @@ We have data in long format, and next we make two more dataframes: one in wider 
 
 
 ```{r}
-data_attend <- read_csv("data_long_attend.csv")
+data_attend <- read_csv("data_long_attend.csv", show_col_types = FALSE)
 
 #select years with most observations
 data_attend_years <- data_attend %>%
   filter(!Year %in% c(1975, 1986, 1987, 1990, 1991, 1993, 1994, 1995, 1996, 1999))
+write_csv(data_attend_years, "data_long_attend.csv")
 
 #wide format
-data_wide <- data_attend_years %>%
+data_wide_attend <- data_attend_years %>%
   pivot_wider(
     names_from=Type,
     values_from=Value
-  ) %>% view()
+  ) #%>% view()
 
 #combined format
-data_combined <- data_wide %>%
+data_combined_attend <- data_wide_attend %>%
   group_by(Level, Year) %>%
   summarise(
     Attendance = Attendance[!is.na(Attendance)],
     Enrollment = Enrollment[!is.na(Enrollment)]
   ) %>%
-  ungroup() %>% view()
+  ungroup() %>%
+  mutate(Level = factor(Level, levels = c("Elementary School", "Middle School", "High School"))) #%>% view()
+write_csv(data_combined_attend, "data_combined_attend.csv")
 
 ```
 
 #add selected distribution plot to show new distribution
+
+We now look at the trends in the data. Using our long and combined datasets, we can build visuals to display how attendance and enrollment rates change as time progresses. We refactor the data after loading it in so that the variables are ordered correctly in the plots, and then build the plots themselves.
+
+The following three plots presents annual attendance and enrollment rates for US elementary, middle, and high schools. Each color represents a different variable as can be seen in the legend. Each panel shows how these two metrics evolve side by side within a given school level. Enrollment rates include more fluctuation than attendance rates for all three levels of schools, especially in high schools. Please note that attendance data is available one year later than enrollment data.
+
+Readers can hover over the plots to see specific data point information, zoom in or out, or double click a variable on the legend to see only the data for the variable.
+
+```{r}
+data_long <- read_csv("data_long_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School")),
+    Type = factor(Type, levels = c("Attendance", "Enrollment"))
+  )
+
+p_line_per_school_horizontal <- ggplot(data_long, aes(x=Year, y=Value, color=Type)) +
+  geom_line(size=1.2, na.rm=TRUE) +
+  geom_point(size=2, alpha=0.8) +
+  facet_grid(~Level, scales="fixed", switch="y") +
+  theme_minimal() +
+  theme(
+    strip.background=element_rect(fill="grey90", color=NA),
+    panel.spacing=unit(1, "lines")
+  ) +
+  labs(
+    title="Attendance vs. Enrollment Trends in Schools Over Time (USA)",
+    y="Rate (%)",
+    color="Variable"
+  ) +
+  scale_color_manual(values=c("Attendance"="#FF69B4", "Enrollment"="#3bbf8f")
+  )
+# ggsave("line_per_school_horizontal.png", p_line_per_school_horizontal)
+
+p_line_interactive1 <- ggplotly(p_line_per_school_horizontal)
+p_line_interactive1
+
+```
+
+Next, we visualized how enrollment trends changed over time across the three different school levels Each color represents the variable shown in the legend, each line represents the linear trend, and shaded regions show 95% confidence intervals. We see a steady increase in high schools, which may suggest possible demographic shifts or improved retention in upper grades. In contrast, enrollment in elementary schools slightly decreased over time, indicating declining birth cohorts feeding into early education. Middle school enrollments remained relatively stable. It is important to note the COVID quarantine started in early 2020, and both Elementary and Middle school enrollment was lowest the following year.
+
+Readers can hover over the plot to see specific data point information, zoom in or out, or double click a variable on the legend to see only the data for the variable.
+
+``` {r}
+data_combined <- read_csv("data_combined_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School"))
+  )
+
+enroll_longitudinal <- ggplot(data_combined, aes(x=Year, y=Enrollment, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title=" Enrollment Observations Longitudinally",
+       x="Year",
+       y="Entrollemnt",
+       color="Level")
+enroll_longitudinal_plotly <- ggplotly(enroll_longitudinal)
+enroll_longitudinal_plotly
+
+# pretty_cor_table(data_combined$Year, data_combined$Enrollment, "Year", "Enrollment")
+```
+
+We also visualized how attendance trends changed over time across the 3 different types of schools, which can be seen in the plot below. Each color represents the variable shown in the legend, each line line represents the linear trend, and shaded regions show 95% confidence intervals. We see gradual downward trends in all three school types, indicating that attendance has slightly declined from 2014 to 2021. Among the three school types, middle schools consistently maintain the highest attendance rates followed by elementary and then high schools. The decline was steepest in elementary schools, suggesting attendance among younger students may have been more sensitive to disruptions such as policy shifts or COVID-19 pandemic.
+
+Readers can hover over the plots to see specific data point information, zoom in or out, or double click a variable on the legend to see only the data for the variable.
+
+```{r}
+data_combined <- read_csv("data_combined_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School"))
+  )
+
+attend_longitudinal <- ggplot(data_combined, aes(x=Year, y=Attendance, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title=" Attendance Observations Longitudinally",
+       x="Year",
+       y="Attendance",
+       color="Level")
+attend_longitudinal_plotly <- ggplotly(attend_longitudinal)
+attend_longitudinal_plotly
+
+# pretty_cor_table(data_combined$Year, data_combined$Attendance, "Year", "Attendance")
+```
+
+The following statistics table summarizes the central tendency and variability of attendance and enrollment rates across US elementary, middle, and high schools. Click the arrow in the top right corner to see the rest of the values.
+
+For attendance, mean rates range from 96.4% to 97.7%, indicating high participation levels. Elementary schools exhibit the widest range (3.39%) and the highest variability (SD = 1.32). This suggests that there is greater fluctuation in attendance among younger students.
+For enrollment, mean rates range from 94.96% to 99.2%, indicating generally high enrollment rates. Here, high schools display the largest spread (range = 7.38) and the highest variance (4.79). While attendance remained uniformly high across all levels, enrollment volatility increased with school level.
+
+```{r}
+summary_stats <- data_long %>%
+  group_by(Type, Level) %>%
+  summarise(
+    n = n(),                           
+    Mean = mean(Value, na.rm=TRUE),
+    Median = median(Value, na.rm=TRUE),
+    SD = sd(Value, na.rm=TRUE),
+    Variance = var(Value, na.rm=TRUE),
+    Minimum = min(Value, na.rm=TRUE),
+    Maximum = max(Value, na.rm=TRUE),
+    Range = Maximum - Minimum,
+    Q1 = quantile(Value, 0.25, na.rm=TRUE),
+    Q3 = quantile(Value, 0.75, na.rm=TRUE),
+    IQR = Q3 - Q1,
+  ) %>%
+  arrange(Type, Level)  
+
+paged_table(summary_stats)
+# write_csv(summary_stats, "tendency_attend.csv")
+```
+#maybe add some plot showing something noteable about the tendency measures, or otherwise if there are any interesting ones we can color or bold them.
+
 #following chunk contains attendance gap data that needs to be fixed.
 
 ```{r}
@@ -284,6 +405,17 @@ data_combined <- data_wide %>%
 # gap_df <- collapsed %>%
 #   pivot_wider(names_from = Type, values_from = Value) %>%
 #   mutate(Gap = Enrollment - Attendance)
+
+# 5) Gap over time (only where both exist)
+# if (any(!is.na(gap_df$Gap))) {
+#   p_gap <- ggplot(gap_df, aes(Year, Gap, color = Level)) +
+#     geom_hline(yintercept = 0, linetype = "dashed") +
+#     geom_line(linewidth = 1, na.rm = TRUE) +
+#     geom_point(size = 1.3, alpha = 0.8) +
+#     labs(title = "Enrollment – Attendance Gap (percentage points)", y = "Gap (pp)", x = "Year") +
+#     theme_minimal(base_size = 12)
+#   print(p_gap)
+# }
 
 # Quick diagnostics (see what exists)
 # print(table(gap_df$Level, useNA = "ifany"))
@@ -316,6 +448,7 @@ Next, we calculate R^2 and p-values for attendance and enrollment data combined.
 Overall, we did not find any significant results so we cannot conclude that enrollment predicts attendance in this dataset.
 
 ``` {r}
+data_combined <- read_csv("data_combined_attend.csv", show_col_types = FALSE)
 
 model <- lm(Enrollment ~ Attendance, data=data_combined)
 
@@ -335,114 +468,10 @@ pretty_r2_table(by_schooling_r2, "R² and p-values by School Level (Red = signif
 
 ```
 
+#add regression here
 
 ```{r}
-###
-p_line_per_school_horizontal <- ggplot(data_long, aes(x=Year, y=Value, color=Type)) +
-  geom_line(size=1.2, na.rm=TRUE) +
-  geom_point(size=2, alpha=0.8) +
-  facet_grid(~Level, scales="fixed", switch="y") +
-  theme_minimal() +
-  theme(
-    strip.background=element_rect(fill="grey90", color=NA),
-    panel.spacing=unit(1, "lines")
-  ) +
-  labs(
-    title="Attendance vs. Enrollment Trends in Schools Over Time (USA)",
-    y="Rate (%)",
-    color="Variable"
-  ) +
-  scale_color_manual(values=c("Attendance"="#FF69B4", "Enrollment"="#3bbf8f")
-  )
-# ggsave("line_per_school_horizontal.png", p_line_per_school_horizontal)
-
-p_line_interactive1 <- ggplotly(p_line_per_school_horizontal)
-p_line_interactive1
-
-# 5) Gap over time (only where both exist)
-# if (any(!is.na(gap_df$Gap))) {
-#   p_gap <- ggplot(gap_df, aes(Year, Gap, color = Level)) +
-#     geom_hline(yintercept = 0, linetype = "dashed") +
-#     geom_line(linewidth = 1, na.rm = TRUE) +
-#     geom_point(size = 1.3, alpha = 0.8) +
-#     labs(title = "Enrollment – Attendance Gap (percentage points)", y = "Gap (pp)", x = "Year") +
-#     theme_minimal(base_size = 12)
-#   print(p_gap)
-# }
-
-###
-
-eqn_text <- paste0(
-  "Trendline: y = ",
-  round(coef(model)[2],3),"x + ",
-  round(coef(model)[1],3),
-  "<br>R² = ",round(summary(model)$r.squared,3),
-  "<br>p = ",signif(summary(model)$coefficients[2,4],3)
-)
-
-enroll_attend_scatter <- ggplot(data_combined, aes(x=Attendance, y=Enrollment)) +
-  geom_point(aes(color=factor(Year)), size=2) +
-  geom_smooth(method=lm, aes(group=1, text=eqn_text)) +
-  theme_minimal() +
-  labs(title="All Attendance vs Enrollment Observations",
-       x="Attendance",
-       y="Enrollment",
-       color="Year")
-
-enroll_attend_scatter_plotly <- ggplotly(enroll_attend_scatter, tooltip=c("text","x","y","color"))
-enroll_attend_scatter_plotly
-
-####
-
-enroll_longitudinal <- ggplot(data_combined, aes(x=Year, y=Enrollment, color=Level)) +
-  geom_point(size=2) +
-  geom_smooth(method=lm, size=1, alpha=0.25) +
-  theme_minimal() +
-  labs(title=" Enrollment Observations Longitudinally",
-       x="Year",
-       y="Entrollemnt",
-       color="Level")
-enroll_longitudinal_plotly <- ggplotly(enroll_longitudinal)
-enroll_longitudinal_plotly
-
-pretty_cor_table(data_combined$Year, data_combined$Enrollment, "Year", "Enrollment")
-###
-
-attend_longitudinal <- ggplot(data_combined, aes(x=Year, y=Attendance, color=Level)) +
-  geom_point(size=2) +
-  geom_smooth(method=lm, size=1, alpha=0.25) +
-  theme_minimal() +
-  labs(title=" Attendance Observations Longitudinally",
-       x="Year",
-       y="Attendance",
-       color="Level")
-attend_longitudinal_plotly <- ggplotly(attend_longitudinal)
-attend_longitudinal_plotly
-
-pretty_cor_table(data_combined$Year, data_combined$Attendance, "Year", "Attendance")
-
-###
-
-# 6) Summary stats (use collapsed to avoid duplicate inflation)
-summary_stats <- data_long %>%
-  group_by(Type, Level) %>%
-  summarise(
-    n = n(),                           
-    Mean = mean(Value, na.rm=TRUE),
-    Median = median(Value, na.rm=TRUE),
-    SD = sd(Value, na.rm=TRUE),
-    Variance = var(Value, na.rm=TRUE),
-    Minimum = min(Value, na.rm=TRUE),
-    Maximum = max(Value, na.rm=TRUE),
-    Range = Maximum - Minimum,
-    Q1 = quantile(Value, 0.25, na.rm=TRUE),
-    Q3 = quantile(Value, 0.75, na.rm=TRUE),
-    IQR = Q3 - Q1,
-  ) %>%
-  arrange(Type, Level)  
-
-paged_table(summary_stats)
-write_csv(summary_stats, "tendency_attend.csv")
+#regression
 
 ```
 
