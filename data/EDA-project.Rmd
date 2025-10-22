@@ -26,12 +26,13 @@ We selected **two major indicator categories** that reflect different dimensions
 
 ### Motivation
 
-When we were brainstorming datasets to go with, we had difficulty choosing a topic because the possibilities were endless. We looked at several options from public health to climate to economics, but we eventually narrowed it down to education, which was something that all of us are connected to and that our classmates and readers could easily relate to. We initially considered focusing on Emory-specific data but broadened our scope to the World Bank’s Education Statistics for its larger context and long-term coverage.
+When we were brainstorming datasets to go with, we had difficulty choosing a topic because the possibilities were endless. We looked at several options from public health to climate to economics, but we eventually narrowed it down to education. This is something that all of us are connected to and that our classmates and readers can easily relate to. We initially considered focusing on Emory-specific data but broadened our scope to the World Bank’s Education Statistics for its larger context and long-term coverage.
 
 As students at an American university, we were especially interested in examining data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment, attendance, and staffing can reveal whether increased investment in education translates into better participation and equity. This directly relates to us, as college students who have undergone the three main levels of education and were told that our own efforts, most notably in high school, would determine our outcomes later in life. But how much do individual outcomes actually depend on the student, and how much on the school systems and structures that support them?
 
 ---
 
+#what is this meant to contain
 # 2. Dataset
 - Data Introduction: source, scope, any ethical considerations
 - Explain different variables
@@ -39,7 +40,7 @@ As students at an American university, we were especially interested in examinin
 ---
 
 # 3. Setup & Packages
-We will perform **Exploratory Data Analysis (EDA)** in R using the **tidyverse** suite of libraries.  
+We will perform **Exploratory Data Analysis (EDA)** in R using the **tidyverse** suite of libraries along with some supplementary packages for smoother visualization.  
 Our analysis will include the following components:
 
 - **Cleaning and reshaping** selected education indicators  
@@ -47,84 +48,122 @@ Our analysis will include the following components:
 - **Examining relationships** among variables through summary statistics and correlation plots  
 - **Interpreting observed trends** in light of historical or policy-level changes, such as shifts in federal funding or national education initiatives  
 
-Before proceeding, we load all necessary packages and set global options for reproducibility and consistent output formatting.
+The "r setup" code chunk applies to every code chunk in the file, so this will allow us to create a "global environment" to use in our analysis. First, we install and load all necessary packages, then set global options for reproducibility and consistent output formatting. We also create functions that will streamline table formatting for data any outputs of interest.
 
-```{r}
+```{r setup}
+# install.packages("kableExtra")
 # install.packages("tidyverse")
 # install.packages("readr")
 # install.packages("knitr")
 # install.packages("plotly")
+# install.packages("rmarkdown")
+# install.packages("broom")
+# install.packages("ggpubr")
+# install.packages("janitor")
+library(kableExtra)
 library(tidyverse) # core data manipulation & visualization
 library(readr) # efficient CSV import
 library(knitr)
 library(plotly) # interactive data visualization
 library(janitor) # column name cleaning & simple tabulations
 library(lubridate) # data parsing and time handling
+library(rmarkdown)
+library(broom)
+library(ggpubr)
 
-set.seed(42)
+#functions to format dts
+pretty_r2_table <- function(df, caption_text){
+  df %>%
+    kable("html", caption = caption_text) %>%
+    kable_styling(full_width = F) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(3, color = ifelse(df$p.value < 0.05, "red", "black"))
+}
+
+pretty_cor_table <- function(x, y, var1_name = NULL, var2_name = NULL) {
+  cor_res <- cor.test(x, y)
+  tibble(
+    Variable1 = var1_name,
+    Variable2 = var2_name,
+    Correlation = round(cor_res$estimate, 3),
+    p.value = signif(cor_res$p.value, 3)) %>%
+    kable("html", caption = paste0("Correlation: ", var1_name, " vs ", var2_name)) %>%
+    kable_styling(full_width = F) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(4, color = ifelse(cor_res$p.value < 0.05, "red", "black"))
+}
+
+set.seed(123)
 opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
-message("All packages loaded.")
 ```
 
 ---
 
 # 4. Data Import & Cleaning
 
-We start from reading the raw EdStats dataset (`EdStats_v01.csv`) and filter only the United States(`Country code == "USA"`). We write the filtered dataset to `EdStats_USA.csv` so later chunks only work with US data.
-
-We also drop fully empty columns (`2024` column) and write each subset to a CSV for reuse in later chunks.
+This dataset is very large and contains data from various countries. As previously mentioned, we are focusing only on the US data. We start from reading the raw EdStats dataset (`EdStats_v01.csv`) and filter only the United States(`Country code == "USA"`). We also drop fully empty columns (`2024` column) as they will not be needed in our analysis. As a check, print any columns that contain all NA values and proceed only if the null set is output. Then, we write the filtered dataset to `EdStats_USA.csv` so that later chunks can work only with our US data without filtering for it multiple times.
 
 This simplifies the dataset to the country of interest and removes all-NA columns to keep downstream transformations clean.
-```{r}
-#set up data for use
-data <- read_csv("EdStats_v01.csv")
 
-#clean up data to have USA data
+```{r, message=TRUE}
+#set up data for use
+#read data, skip empty 2024 column
+data <- read_csv("EdStats_v01.csv", show_col_types=FALSE, col_types=cols(`2024`=col_skip()))
+
+# filter for only USA data
 data_clean <- data %>%
-  filter(grepl("USA", `Country code`)) %>%
-  select(-`2024`) #all na
+  filter(grepl("USA", `Country code`))
+
 #make sure no NA cols remain
-colnames(data_clean)[colSums(is.na(data_clean)) == nrow(data_clean)]
+if (length(colnames(data_clean)[colSums(is.na(data_clean)) == nrow(data_clean)]) == 0) {
+  message("No NA cols remain.")
+} else {
+  message("NA columns remain.")
+}
+
+#save filtered dataset
 write_csv(data_clean, "EdStats_USA.csv")
 ```
 
-To keep downstream steps tidy and reproducible, we create three thematic subsets aligned to our research questions:
+To keep downstream steps tidy and reproducible, we create two thematic subsets aligned to our research questions:
 
 1) **Enrollment vs. Attendance** — indicators with “total net enrolment rate” or “total net attendance rate” (exclude parity indices and sex-specific series for apples-to-apples totals).
    - Note that "enrolment" is misspelled, this is corrected later in code.
    - Dropped all-NA columns and saved as `EdStats_attend.csv`.  
-2) **Teachers vs. Compensation** — teacher counts and teaching staff compensation (exclude sex splits and qualification percentages).
+2) **Teachers vs. Compensation** — teacher counts and teaching staff compensation as a percentage of total institution spending (exclude sex splits and qualification percentages).
    - Dropped all-NA columns and saved as `EdStats_teacher.csv`.  
 
 This ensures we work with clean, directly comparable variables.  
 
 ```{r}
 # 1. Enrollment vs. Attendance
-# filter for enrollment/attendance info
-data <- read_csv("EdStats_USA.csv")
+# filter for enrollment/attendance info, select only sex-combined data
+data <- read_csv("EdStats_USA.csv", show_col_types = FALSE)
 data_filter_attend <- data %>%
   filter(grepl("total net enrolment rate|total net attendance rate", `Indicator name`, ignore.case = TRUE)) %>%
   filter(!grepl("female|male", `Indicator name`)) %>%
   filter(!grepl("adjusted gender parity index", `Indicator name`, ignore.case = TRUE)) %>%
-  select(where(~!all(is.na(.)))) %>% view() %>%
-  write_csv("EdStats_attend.csv")
+  select(where(~!all(is.na(.)))) %>% #view() %>%
+write_csv("EdStats_attend.csv")
 
 # 2. Teachers vs. Compensation
-#filter for num teachers and teaching staff compensation info
-data <- read_csv("EdStats_USA.csv")
+#filter for num teachers and teaching staff compensation info, select only sex-combined data
+data <- read_csv("EdStats_USA.csv", show_col_types = FALSE)
 data_filter_teacher <- data %>%
   filter(grepl("teachers in|teaching staff compensation", `Indicator name`, ignore.case = TRUE)) %>%
   filter(!grepl("female|male", `Indicator name`)) %>%
   filter(!grepl("percentage of qualified", `Indicator name`, ignore.case = TRUE)) %>%
-  select(where(~!all(is.na(.)))) %>% view() %>%
-  write_csv("EdStats_teacher.csv")
+  select(where(~!all(is.na(.)))) %>% #view() %>%
+write_csv("EdStats_teacher.csv")
 ```
 
 ---
 
 # 5. Attendance vs. Enrollment — Reshape, Compare, and Quantify
 The following chunk expands our analysis of `EdStats_attend.csv` to quantify and visualize the relationship between school **enrollment** and **attendance** across education levels in the United States.  
-After reshaping the dataset into tidy long form, we standardize indicator names to capture both spellings of “enrolment/enrollment” and collapse duplicate series to obtain a single observation for each *year × level × type* combination.  
+After reshaping the dataset into tidy long form, we standardize indicator names to capture both spellings of “enrolment/enrollment” and collapse duplicate series to obtain a single observation for each *year × level × type* combination. The long format allows us to have columns for country name and country code (only really needed for reproducibility), variable name, variable value, year, type (simplified variable name: attendance/enrollment), and level (renamed: primary school to elementary school, lower secondary to middle school, and upper secondary to high school). Previously, the "indicator column" contained school type, school level, and sex all in one string. With this new format, we can plot variables in ggplot with column names. 
+
+#Attendacnce gap data need to be fixed i will do this if i have time i might have fucked with it
 From these, we compute a new variable representing the **attendance gap** (*Enrollment – Attendance*) to measure how much access (enrollment) translates into sustained participation (attendance).
 
 - Plot longitudinal **trends** of enrollment and attendance for primary, middle, and high school levels.  
@@ -137,105 +176,272 @@ From these, we compute a new variable representing the **attendance gap** (*Enro
 Focus on whether attendance consistently trails enrollment and whether that gap changes across levels or decades. High correlation indicates structural progress—both metrics rising together—while a persistent positive gap suggests that access alone does not guarantee participation.
 
 ```{r}
-data_attend <- readr::read_csv("EdStats_attend.csv", show_col_types = FALSE)
+data_attend <- read_csv("EdStats_attend.csv")
 
-# 1) Long format with robust labeling (catch both 'enrolment' and 'enrollment' spellings)
 data_long <- data_attend %>%
-  pivot_longer(cols = matches("^\\d{4}$"), names_to = "Year", values_to = "Value") %>%
+  pivot_longer(cols=`1975`:`2022`, names_to="Year", values_to="Value") %>%
   mutate(
-    Year = as.numeric(Year),
-    # Standardize type labels
-    Type = case_when(
-      str_detect(`Indicator name`, regex("attendance", ignore_case = TRUE)) ~ "Attendance",
-      str_detect(`Indicator name`, regex("enrol?ment", ignore_case = TRUE)) ~ "Enrollment",  # enrolment or enrollment
-      TRUE ~ NA_character_
+    Year=as.numeric(Year),
+    Type=case_when(
+      grepl("attendance", `Indicator name`, ignore.case=TRUE) ~ "Attendance",
+      grepl("enrolment", `Indicator name`, ignore.case=TRUE) ~ "Enrollment",
+      TRUE ~ "Other"
     ),
-    # Standardize level labels
-    Level = case_when(
-      str_detect(`Indicator name`, regex("primary", ignore_case = TRUE)) ~ "Primary",
-      str_detect(`Indicator name`, regex("lower\\s*secondary", ignore_case = TRUE)) ~ "Middle",
-      str_detect(`Indicator name`, regex("upper\\s*secondary", ignore_case = TRUE)) ~ "High",
-      TRUE ~ NA_character_
+    Level=case_when(
+      grepl("primary", `Indicator name`, ignore.case=TRUE) ~ "Elementary School",
+      grepl("lower secondary", `Indicator name`, ignore.case=TRUE) ~ "Middle School",
+      grepl("upper secondary", `Indicator name`, ignore.case=TRUE) ~ "High School",
+      TRUE ~ "Other"
     )
   ) %>%
-  filter(!is.na(Type), !is.na(Level), !is.na(Value))
+  filter(Type!="Other", !is.na(Value))
+
+#distribution plot options
+#violin plot (too messy i think unfortunately)
+ggplot(data_long, aes(x=factor(Year, levels=sort(unique(Year))), y=Value, fill=Type)) +
+  geom_violin(alpha=0.5, trim=FALSE) +
+  theme_minimal() +
+  labs(
+    title="Distribution of Attendance vs Enrollment Rates by Year (Pre-filtering)",
+    x="Year",
+    y="Rate (%)",
+    fill="Type"
+  )+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#scatter plot. i added a little bit of jitter cuz there were some overlapping points
+ggplot(data_long, aes(x=factor(Year), y=Value, color=Type)) +
+  geom_jitter(width=0.1, alpha=0.7, size=3) +
+  theme_minimal() +
+  labs(
+    title="Distribution of Attendance vs Enrollment Rates by Year (Pre-filtering)",
+    x="Year",
+    y="Rate (%)",
+    color="Type"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#boxplot and jittered data. too cluttered i think. 
+ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
+  geom_boxplot(alpha=0.3, outlier.shape = 16, outlier.color="red") +
+  geom_jitter(aes(color=Type), width=0.1, size=2) +
+  theme_minimal() +
+  labs(title="Distribution of Attendance vs Enrollment Rates by Year (Pre-filtering)", x="Year", y="Rate (%)") +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+
+#just boxplot. i think still too cluttered. we have no outliers anyways
+ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
+  geom_boxplot(alpha=0.5, outlier.shape = 16, outlier.color="red") +
+  theme_minimal() +
+  labs(title="Distribution of Attendance vs Enrollment Rates by Year (Pre-filtering)", x="Year", y="Rate (%)") +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+
+```
+
+The above plot(s) show the distribution of the data before we focus in on the years with data for both variables. As can be seen in the plot(s), the earlier years contain only enrollment data, while attendance data is added around 2005. Ggplot uses interquartile range (IQR) to calculate outliers, which works for out dual-variable analysis and we do not need to use any multivariable outlier calculation techniques. Any outliers would be marked with red dots in the box plot, and seeing as there are none, we do not need to remove any outliers. 
+
+```{r}
+#select years with most observations
+data_attend_years <- data_attend %>%
+  select(!c(`1975`, `1986`, `1987`, `1990`, `1991`, `1993`, `1995`, `1996`, `1999`, `1994`))
+
+#reshape data for visualization
+#long format
+data_long <- data_attend_years %>%
+  pivot_longer(cols=`2005`:`2022`, names_to="Year", values_to="Value") %>%
+  mutate(
+    Year=as.numeric(Year),
+    Type=case_when(
+      grepl("attendance", `Indicator name`, ignore.case=TRUE) ~ "Attendance",
+      grepl("enrolment", `Indicator name`, ignore.case=TRUE) ~ "Enrollment",
+      TRUE ~ "Other"
+    ),
+    Level=case_when(
+      grepl("primary", `Indicator name`, ignore.case=TRUE) ~ "Elementary School",
+      grepl("lower secondary", `Indicator name`, ignore.case=TRUE) ~ "Middle School",
+      grepl("upper secondary", `Indicator name`, ignore.case=TRUE) ~ "High School",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  filter(Type!="Other", !is.na(Value))
+
+#wide format
+data_wide <- data_long %>%
+  pivot_wider(
+    names_from=Type,
+    values_from=Value
+  )
+
+#combined format
+data_combined <- data_wide %>%
+  group_by(Level, Year) %>%
+  summarise(
+    Attendance = Attendance[!is.na(Attendance)],
+    Enrollment = Enrollment[!is.na(Enrollment)]
+  ) %>%
+  ungroup()
 
 # 2) Collapse duplicates within (Year, Level, Type)
 #    (If the catalog has multiple series for the same concept, average them.)
-collapsed <- data_long %>%
-  group_by(Level, Year, Type) %>%
-  summarize(Value = mean(Value, na.rm = TRUE), .groups = "drop")
+# collapsed <- data_long %>%
+#   group_by(Level, Year, Type) %>%
+#   summarize(Value = mean(Value, na.rm = TRUE), .groups = "drop")
 
 # 3) Wide format with both columns side-by-side
-gap_df <- collapsed %>%
-  pivot_wider(names_from = Type, values_from = Value) %>%
-  mutate(Gap = Enrollment - Attendance)
+# gap_df <- collapsed %>%
+#   pivot_wider(names_from = Type, values_from = Value) %>%
+#   mutate(Gap = Enrollment - Attendance)
 
 # Quick diagnostics (see what exists)
-print(table(gap_df$Level, useNA = "ifany"))
-print(summary(gap_df[, c("Enrollment", "Attendance")]))
+# print(table(gap_df$Level, useNA = "ifany"))
+# print(summary(gap_df[, c("Enrollment", "Attendance")]))
+# 
+# # If there are no overlapping rows, bail out gracefully
+# if (nrow(drop_na(gap_df, Enrollment, Attendance)) < 2) {
+#   warning("No overlapping Enrollment & Attendance observations after cleaning; skipping correlation and scatter.")
+# } else {
+#   # Correlation and scatter only when data exist
+#   corr_df <- gap_df %>% drop_na(Enrollment, Attendance)
+# 
+#   r_val <- cor(corr_df$Enrollment, corr_df$Attendance, use = "pairwise.complete.obs", method = "pearson")
+#   message(sprintf("Correlation between Enrollment and Attendance: r = %.2f", r_val))
+# 
+#   p_scatter <- ggplot(corr_df, aes(Enrollment, Attendance, color = Level)) +
+#     geom_point(alpha = 0.6) +
+#     geom_smooth(method = "lm", se = FALSE, linewidth = 0.9) +
+#     labs(
+#       title = sprintf("Attendance vs. Enrollment (r = %.2f)", r_val),
+#       x = "Enrollment Rate (%)", y = "Attendance Rate (%)"
+#     ) +
+#     theme_minimal(base_size = 12)
+#   print(p_scatter)
+# }
 
-# If there are no overlapping rows, bail out gracefully
-if (nrow(drop_na(gap_df, Enrollment, Attendance)) < 2) {
-  warning("No overlapping Enrollment & Attendance observations after cleaning; skipping correlation and scatter.")
-} else {
-  # Correlation and scatter only when data exist
-  corr_df <- gap_df %>% drop_na(Enrollment, Attendance)
+model <- lm(Enrollment ~ Attendance, data=data_combined)
+# summary(model)  #not significant
 
-  r_val <- cor(corr_df$Enrollment, corr_df$Attendance, use = "pairwise.complete.obs", method = "pearson")
-  message(sprintf("Correlation between Enrollment and Attendance: r = %.2f", r_val))
+by_year_r2 <- data_combined %>%
+    group_by(Year) %>%
+    do(glance(lm(Enrollment ~ Attendance, data=.))) %>%
+    select(Year,r.squared,p.value)
+# by_year_r2  #not significant
+pretty_r2_table(by_year_r2, "R² and p-values by Year (Red = significant, Black = not significant)")
 
-  p_scatter <- ggplot(corr_df, aes(Enrollment, Attendance, color = Level)) +
-    geom_point(alpha = 0.6) +
-    geom_smooth(method = "lm", se = FALSE, linewidth = 0.9) +
-    labs(
-      title = sprintf("Attendance vs. Enrollment (r = %.2f)", r_val),
-      x = "Enrollment Rate (%)", y = "Attendance Rate (%)"
-    ) +
-    theme_minimal(base_size = 12)
-  print(p_scatter)
-}
+by_schooling_r2 <- data_combined %>%
+    group_by(Level) %>%
+    do(glance(lm(Enrollment ~ Attendance, data=.))) %>%
+    select(Level,r.squared,p.value)
+# by_schooling_r2  #not significant
+pretty_r2_table(by_schooling_r2, "R² and p-values by School Level (Red = significant, Black = not significant)")
 
-# 4) Trend lines (unchanged, but use 'collapsed' to avoid duplicates)
-p_trend <- ggplot(collapsed, aes(Year, Value, color = factor(..group..))) +
-  geom_line(linewidth = 1, na.rm = TRUE, aes(color = after_stat(NULL))) # placeholder; we'll fix color below
 
-# Better: rebuild trend with explicit mapping
-p_trend <- ggplot(collapsed, aes(Year, Value, color = Type)) +
-  geom_line(linewidth = 1, na.rm = TRUE) +
-  geom_point(size = 1.5, alpha = 0.7) +
-  facet_wrap(~ Level, ncol = 3) +
-  scale_color_manual(values = c("Attendance" = "#FF69B4", "Enrollment" = "#3BBF8F")) +
-  labs(title = "Attendance vs Enrollment over Time (USA)", y = "Rate (%)", color = "Series") +
-  theme_minimal(base_size = 12)
-print(p_trend)
+###
+p_line_per_school_horizontal <- ggplot(data_long, aes(x=Year, y=Value, color=Type)) +
+  geom_line(size=1.2, na.rm=TRUE) +
+  geom_point(size=2, alpha=0.8) +
+  facet_grid(~Level, scales="fixed", switch="y") +
+  theme_minimal() +
+  theme(
+    strip.background=element_rect(fill="grey90", color=NA),
+    panel.spacing=unit(1, "lines")
+  ) +
+  labs(
+    title="Attendance vs. Enrollment Trends in Schools Over Time (USA)",
+    y="Rate (%)",
+    color="Variable"
+  ) +
+  scale_color_manual(values=c("Attendance"="#FF69B4", "Enrollment"="#3bbf8f")
+  )
+# ggsave("line_per_school_horizontal.png", p_line_per_school_horizontal)
+
+p_line_interactive1 <- ggplotly(p_line_per_school_horizontal)
+p_line_interactive1
 
 # 5) Gap over time (only where both exist)
-if (any(!is.na(gap_df$Gap))) {
-  p_gap <- ggplot(gap_df, aes(Year, Gap, color = Level)) +
-    geom_hline(yintercept = 0, linetype = "dashed") +
-    geom_line(linewidth = 1, na.rm = TRUE) +
-    geom_point(size = 1.3, alpha = 0.8) +
-    labs(title = "Enrollment – Attendance Gap (percentage points)", y = "Gap (pp)", x = "Year") +
-    theme_minimal(base_size = 12)
-  print(p_gap)
-}
+# if (any(!is.na(gap_df$Gap))) {
+#   p_gap <- ggplot(gap_df, aes(Year, Gap, color = Level)) +
+#     geom_hline(yintercept = 0, linetype = "dashed") +
+#     geom_line(linewidth = 1, na.rm = TRUE) +
+#     geom_point(size = 1.3, alpha = 0.8) +
+#     labs(title = "Enrollment – Attendance Gap (percentage points)", y = "Gap (pp)", x = "Year") +
+#     theme_minimal(base_size = 12)
+#   print(p_gap)
+# }
+
+###
+
+eqn_text <- paste0(
+  "Trendline: y = ",
+  round(coef(model)[2],3),"x + ",
+  round(coef(model)[1],3),
+  "<br>R² = ",round(summary(model)$r.squared,3),
+  "<br>p = ",signif(summary(model)$coefficients[2,4],3)
+)
+
+enroll_attend_scatter <- ggplot(data_combined, aes(x=Attendance, y=Enrollment)) +
+  geom_point(aes(color=factor(Year)), size=2) +
+  geom_smooth(method=lm, aes(group=1, text=eqn_text)) +
+  theme_minimal() +
+  labs(title="All Attendance vs Enrollment Observations",
+       x="Attendance",
+       y="Enrollment",
+       color="Year")
+
+enroll_attend_scatter_plotly <- ggplotly(enroll_attend_scatter, tooltip=c("text","x","y","color"))
+enroll_attend_scatter_plotly
+
+####
+
+enroll_longitudinal <- ggplot(data_combined, aes(x=Year, y=Enrollment, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title=" Enrollment Observations Longitudinally",
+       x="Year",
+       y="Entrollemnt",
+       color="Level")
+enroll_longitudinal_plotly <- ggplotly(enroll_longitudinal)
+enroll_longitudinal_plotly
+
+pretty_cor_table(data_combined$Year, data_combined$Enrollment, "Year", "Enrollment")
+###
+
+attend_longitudinal <- ggplot(data_combined, aes(x=Year, y=Attendance, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title=" Attendance Observations Longitudinally",
+       x="Year",
+       y="Attendance",
+       color="Level")
+attend_longitudinal_plotly <- ggplotly(attend_longitudinal)
+attend_longitudinal_plotly
+
+pretty_cor_table(data_combined$Year, data_combined$Attendance, "Year", "Attendance")
+
+###
 
 # 6) Summary stats (use collapsed to avoid duplicate inflation)
-summary_stats <- collapsed %>%
+summary_stats <- data_long %>%
   group_by(Type, Level) %>%
-  summarize(
-    n = n(),
-    mean_rate = mean(Value, na.rm = TRUE),
-    median_rate = median(Value, na.rm = TRUE),
-    sd_rate = sd(Value, na.rm = TRUE),
-    min_rate = min(Value, na.rm = TRUE),
-    max_rate = max(Value, na.rm = TRUE),
-    IQR = IQR(Value, na.rm = TRUE),
-    .groups = "drop"
-  )
-readr::write_csv(summary_stats, "tendency_attend.csv")
-summary_stats
+  summarise(
+    n = n(),                           
+    Mean = mean(Value, na.rm=TRUE),
+    Median = median(Value, na.rm=TRUE),
+    SD = sd(Value, na.rm=TRUE),
+    Variance = var(Value, na.rm=TRUE),
+    Minimum = min(Value, na.rm=TRUE),
+    Maximum = max(Value, na.rm=TRUE),
+    Range = Maximum - Minimum,
+    Q1 = quantile(Value, 0.25, na.rm=TRUE),
+    Q3 = quantile(Value, 0.75, na.rm=TRUE),
+    IQR = Q3 - Q1,
+  ) %>%
+  arrange(Type, Level)  
+
+paged_table(summary_stats)
+write_csv(summary_stats, "tendency_attend.csv")
+
 ```
 
 ---
@@ -262,6 +468,10 @@ Focus on whether the **compensation share rises or falls** with the **number of 
 Parallel upward trends may indicate sustained investment in instructional personnel, while divergence could suggest funding reallocation, changing class sizes, or reporting gaps across education levels.
 
 ```{r}
+
+### This is not done
+
+
 # 1) Read & filter (keep only teaching staff; drop qualification % series)
 teacher_raw <- read_csv("EdStats_teacher.csv", show_col_types = FALSE) %>%
   filter(!str_detect(`Indicator name`, regex("non-?teaching staff", ignore_case = TRUE))) %>%
