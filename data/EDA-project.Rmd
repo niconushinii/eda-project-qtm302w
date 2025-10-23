@@ -477,12 +477,18 @@ print(p_reg)
 # 7. Discussion
 
 ### Interim Takeaways
-- **Enrollment vs. Attendance:** Attendance rates consistently trail enrollment rates at all levels, though the gap varies by level and year. This may point to structural barriers beyond access.  
+- **Enrollment vs. Attendance:** Attendance rates are typically lower than enrollment rates at all levels, though the gap varies by level and year. Attendance across school levels took a large dip in 2020, which could be related to the COVID quarantine that was put into place early into that year.  
 
-These observations are preliminary and will guide further analysis.  
+Middle and high school enrollment rates are higher than they were in 2005, and while their attendance rates took the dip in 2020 they look be increasing back to where they were prior to COVID. Elementary school enrollment rates are lower now than they have been since before 2005, and have been falling since 2016. This could be due to a number of factors, such as policies that de-fund primary public schools or a shift towards private schooling and homeschooling.  
+
+Further analysis revealed that mean enrollment rates were consistently higher than mean attendance rates across school levels. This is backed up by our visualizations earlier in the analysis that revealed the same trend. This may point to structural barriers beyond access.  
+
+We did not find any statistical significance between attendance and enrollment rates, however with the amount of data we had post-filtering we were limited in how we could partition the data to search for smaller trends. We actually did find statistical significance in the decreasing attendance rates over time, as well as a relatively strong negative linear relationship, but we were unable to include that and fully explain it while staying within the word count for this assignment. We elected to exclude that table and analysis in favor of further exploratory analysis.
+
+Finally, we ran a model for linear regression by school type. Elementary schools showed a weak positive linear relationship between enrollment and attendance, while middle and high schools showed a weak negative linear relationship. This was unexpected as a negative linear relationship between these variables implies that as one variable increases the other will decrease, and we expect that enrollment and attendance increase/decrease together. Given that we did not find any statistical significance between the two variables, it is entirely plausible that they could have a negative linear relationship.
 
 **Reproducibility Notes**  
-All intermediate datasets and figures are written to disk (`EdStats_USA.csv`, `EdStats_attend.csv`, `EdStats_teacher.csv`, and exported PNGs).  
+All intermediate datasets and figures are written to disk (`EdStats_USA.csv`, `EdStats_attend.csv`, `data_attend.csv`, `data_long_attend.csv`, `data_combined.csv`, and exported PNGs).  
 This allows others to review and re-run later steps without repeating earlier processing.  
 Consider adding `sessionInfo()` at the end to document package versions.
 
@@ -490,7 +496,8 @@ Consider adding `sessionInfo()` at the end to document package versions.
 
 # 8. Works Cited
 
-reference string
+World Bank Group. Education Statistics. World Bank Data Catalog, 2022, https://datacatalog.worldbank.org/search/dataset/0038480/Education-Statistics.
+
 
 
 
