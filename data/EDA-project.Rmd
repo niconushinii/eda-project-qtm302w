@@ -246,7 +246,7 @@ data_combined_attend <- data_wide_attend %>%
 
 ```
 
-#add selected distribution plot to show new distribution
+The scatter and box plots below show the distribution of the data after filtering out the years without enough attendance data. The number of observations in either variable is now closer to being equal, which is ideal for our next analysis steps.
 
 ```{r}
 data_long <- read_csv("data_long_attend.csv", show_col_types = FALSE) %>%
@@ -275,8 +275,6 @@ ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
   theme(axis.text.x = element_text(angle=45, hjust=1))
 
 ```
-
-The above scatter and box plots show the distribution of the data after filtering out the years without enough attendance data. The number of observations in either variable is now closer to being equal, which is ideal for our next analysis steps.
 
 We now look at the trends in the data. Using our long and combined datasets, we can build visuals to display how attendance and enrollment rates change as time progresses. We re-factor the data after loading it in so that the variables are ordered correctly in the plots, and then build the plots themselves.
 
@@ -334,8 +332,6 @@ enroll_longitudinal <- ggplot(data_combined, aes(x=Year, y=Enrollment, color=Lev
        color="Level")
 enroll_longitudinal_plotly <- ggplotly(enroll_longitudinal)
 enroll_longitudinal_plotly
-
-# pretty_cor_table(data_combined$Year, data_combined$Enrollment, "Year", "Attendance")
 ```
 
 We also visualized how attendance trends changed over time across the 3 different types of schools, which can be seen in the plot below. Each color represents the variable shown in the legend, each line line represents the linear trend, and shaded regions show 95% confidence intervals. We see gradual downward trends in all three school types, indicating that attendance has slightly declined from 2014 to 2021. Among the three school types, middle schools consistently maintain the highest attendance rates followed by elementary and then high schools. The decline was steepest in elementary schools, suggesting attendance among younger students may have been more sensitive to disruptions such as policy shifts or COVID-19 pandemic.
@@ -358,8 +354,6 @@ attend_longitudinal <- ggplot(data_combined, aes(x=Year, y=Attendance, color=Lev
        color="Level")
 attend_longitudinal_plotly <- ggplotly(attend_longitudinal)
 attend_longitudinal_plotly
-
-# pretty_cor_table(data_combined$Year, data_combined$Attendance, "Year", "Attendance")
 ```
 
 The following statistics table summarizes the central tendency and variability of attendance and enrollment rates across US elementary, middle, and high schools. Click the arrow in the top right corner to see the rest of the values.
@@ -425,10 +419,29 @@ pretty_r2_table(by_schooling_r2, "R² and p-values by School Level (Red = signif
 
 ```
 
-#add regression here
+We also looked into elementary school, middle school, and high school regression models. Across both elementary and middle education levels, attendance and enrollment rates show a weak linear relationship. The R2 values of 0.136 and 0.367 suggest that enrollment explains only a small part of the variance in attendance rates. Additionally, both models had p-values well over 0.05 which indicate statistical insignificance. Interestingly, the directions of association differ in elementary and middle school levels. While both variables increase together in elementary school, an increase in enrollment seems to indicate a decrease in attendance rates in middle school. These opposing slopes imply that factors influencing attendance may differ between younger and older students. High school results were slightly more significant compared to the other two levels, but not to the extent that they can be to considered statistically significant. The linear relationship at the level of schooling is also slightly stronger than the other two, but not by a significant factor. The direction of linearity in high school matches that of middle schools, or in other words an increase in one variable causes a decrease in another.
+
 
 ```{r}
+data_long_attend <- read_csv("data_long_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School")),
+    Type = factor(Type, levels = c("Attendance", "Enrollment"))
+  )
+
+data_wide <- data_long_attend %>%
+  select(Year, Level, Type, Value) %>%
+  pivot_wider(names_from = Type, values_from = Value) %>%
+  arrange(Level, Year) %>%
+  filter(!is.na(Attendance), !is.na(Enrollment))
+
 #regression
+glance_by_level <- data_wide %>%
+  tidyr::nest(data = -Level) %>%
+  mutate(model = purrr::map(data, ~ lm(Attendance ~ Enrollment, data = .x)),
+         stats = purrr::map(model, broom::glance)) %>%
+  tidyr::unnest(stats)
+
 # First, create the text labels from our model summary table
 panel_labels <- glance_by_level %>%
   transmute(
