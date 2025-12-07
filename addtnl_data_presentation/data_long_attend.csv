@@ -1,0 +1,52 @@
+...1,Country name,Country code,Indicator name,Year,Value,Type,Level
+1,United States,USA,"Total net attendance rate, lower secondary, both sexes (%)",2010,98.31643677,Attendance,Middle School
+2,United States,USA,"Total net attendance rate, lower secondary, both sexes (%)",2015,98.13394928,Attendance,Middle School
+3,United States,USA,"Total net attendance rate, lower secondary, both sexes (%)",2016,98.13453674,Attendance,Middle School
+4,United States,USA,"Total net attendance rate, lower secondary, both sexes (%)",2017,98.23693848,Attendance,Middle School
+5,United States,USA,"Total net attendance rate, lower secondary, both sexes (%)",2020,95.80013275,Attendance,Middle School
+6,United States,USA,"Total net attendance rate, lower secondary, both sexes (%)",2021,97.57949829,Attendance,Middle School
+7,United States,USA,"Total net attendance rate, primary, both sexes (%)",2010,98.02867126,Attendance,Elementary School
+8,United States,USA,"Total net attendance rate, primary, both sexes (%)",2015,97.90289307,Attendance,Elementary School
+9,United States,USA,"Total net attendance rate, primary, both sexes (%)",2016,97.86710358,Attendance,Elementary School
+10,United States,USA,"Total net attendance rate, primary, both sexes (%)",2017,97.78150177,Attendance,Elementary School
+11,United States,USA,"Total net attendance rate, primary, both sexes (%)",2020,94.63588715,Attendance,Elementary School
+12,United States,USA,"Total net attendance rate, primary, both sexes (%)",2021,96.85820007,Attendance,Elementary School
+13,United States,USA,"Total net attendance rate, upper secondary, both sexes (%)",2010,96.48197937,Attendance,High School
+14,United States,USA,"Total net attendance rate, upper secondary, both sexes (%)",2015,96.75272369,Attendance,High School
+15,United States,USA,"Total net attendance rate, upper secondary, both sexes (%)",2016,96.8380127,Attendance,High School
+16,United States,USA,"Total net attendance rate, upper secondary, both sexes (%)",2017,96.75399017,Attendance,High School
+17,United States,USA,"Total net attendance rate, upper secondary, both sexes (%)",2020,95.28336334,Attendance,High School
+18,United States,USA,"Total net attendance rate, upper secondary, both sexes (%)",2021,96.33305359,Attendance,High School
+25,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2005,98.85082245,Enrollment,Middle School
+26,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2013,98.63796234,Enrollment,Middle School
+27,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2014,97.76647186,Enrollment,Middle School
+28,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2015,99.15386963,Enrollment,Middle School
+29,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2016,99.69571686,Enrollment,Middle School
+30,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2017,99.79624939,Enrollment,Middle School
+31,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2018,99.68881226,Enrollment,Middle School
+32,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2019,99.53955841,Enrollment,Middle School
+33,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2020,99.82733154,Enrollment,Middle School
+34,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2021,98.84224701,Enrollment,Middle School
+35,United States,USA,"Total net enrolment rate, lower secondary, both sexes (%)",2022,99.18697357,Enrollment,Middle School
+46,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2005,99.43480682,Enrollment,Elementary School
+47,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2013,97.10192871,Enrollment,Elementary School
+48,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2014,97.97434235,Enrollment,Elementary School
+49,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2015,98.19413757,Enrollment,Elementary School
+50,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2016,99.64002991,Enrollment,Elementary School
+51,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2017,99.57562256,Enrollment,Elementary School
+52,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2018,99.42578888,Enrollment,Elementary School
+53,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2019,99.08342743,Enrollment,Elementary School
+54,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2020,97.99491882,Enrollment,Elementary School
+55,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2021,95.90487671,Enrollment,Elementary School
+56,United States,USA,"Total net enrolment rate, primary, both sexes (%)",2022,96.01779175,Enrollment,Elementary School
+59,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2005,91.4364624,Enrollment,High School
+60,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2013,92.0827179,Enrollment,High School
+61,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2014,93.20092773,Enrollment,High School
+62,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2015,93.92386627,Enrollment,High School
+63,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2016,95.27139282,Enrollment,High School
+64,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2017,95.21186066,Enrollment,High School
+65,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2018,96.40283203,Enrollment,High School
+66,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2019,96.24925232,Enrollment,High School
+67,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2020,97.02671814,Enrollment,High School
+68,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2021,98.82067871,Enrollment,High School
+69,United States,USA,"Total net enrolment rate, upper secondary, both sexes (%)",2022,94.93369293,Enrollment,High School

@@ -1,0 +1,560 @@
+
+#didnt feel like picking our whats needed i just pasted everything lol. tables at bottom
+
+# install.packages("kableExtra")
+# install.packages("tidyverse")
+# install.packages("knitr")
+# install.packages("plotly")
+# install.packages("rmarkdown")
+# install.packages("broom")
+# install.packages("ggpubr")
+# install.packages("janitor")
+library(kableExtra) 
+library(tidyverse) 
+library(readr) 
+library(knitr)
+library(plotly) 
+library(janitor) 
+library(lubridate) 
+library(rmarkdown)
+library(broom)
+library(ggpubr)
+
+# setwd("/Users/danielleklewans/Documents/GitHub/eda-project-qtm302w/addtnl_data_presentation")
+
+#functions to format dts
+pretty_r2_table <- function(df, caption_text){
+  df %>%
+    kable("html", caption = caption_text) %>%
+    kable_styling(full_width = F) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(3, color = ifelse(df$p.value < 0.05, "red", "black"))
+}
+
+pretty_cor_table <- function(x, y, var1_name = NULL, var2_name = NULL) {
+  cor_res <- cor.test(x, y)
+  tibble(
+    Variable1 = var1_name,
+    Variable2 = var2_name,
+    Correlation = round(cor_res$estimate, 3),
+    p.value = signif(cor_res$p.value, 3)) %>%
+    kable("html", caption = paste0("Correlation: ", var1_name, " vs ", var2_name)) %>%
+    kable_styling(full_width = F) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(4, color = ifelse(cor_res$p.value < 0.05, "red", "black"))
+}
+
+set.seed(123)
+opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
+
+data <- read_csv("EdStats_v01.csv", show_col_types=FALSE, col_types=cols(`2024`=col_skip()))
+
+# filter for only USA data
+data_clean <- data %>%
+  filter(grepl("USA", `Country code`))
+
+#make sure no NA cols remain
+if (length(colnames(data_clean)[colSums(is.na(data_clean)) == nrow(data_clean)]) == 0) {
+  message("No NA cols remain.")
+} else {
+  message("NA columns remain.")
+}
+
+#save filtered dataset
+write_csv(data_clean, "EdStats_USA.csv")
+
+# Enrollment vs. Attendance
+# filter for enrollment/attendance info, select only sex-combined data
+data <- read_csv("EdStats_USA.csv", show_col_types = FALSE)
+data_filter_attend <- data %>%
+  filter(grepl("total net enrolment rate|total net attendance rate", `Indicator name`, ignore.case = TRUE)) %>%
+  filter(!grepl("female|male", `Indicator name`)) %>%
+  filter(!grepl("adjusted gender parity index", `Indicator name`, ignore.case = TRUE)) %>%
+  select(where(~!all(is.na(.)))) #%>% view() %>%
+# write_csv("EdStats_attend.csv")
+
+
+
+data_attend <- read_csv("EdStats_attend.csv", show_col_types = FALSE)
+
+#long format
+data_long_attend <- data_attend %>%
+  pivot_longer(cols=`1975`:`2022`, names_to="Year", values_to="Value") %>%
+  mutate(
+    Year = as.numeric(Year),
+    Type = case_when(
+      grepl("attendance", `Indicator name`, ignore.case=TRUE) ~ "Attendance",
+      grepl("enrolment", `Indicator name`, ignore.case=TRUE) ~ "Enrollment",
+      TRUE ~ "Other"
+    ),
+    Level = case_when(
+      grepl("primary", `Indicator name`, ignore.case=TRUE) ~ "Elementary School",
+      grepl("lower secondary", `Indicator name`, ignore.case=TRUE) ~ "Middle School",
+      grepl("upper secondary", `Indicator name`, ignore.case=TRUE) ~ "High School",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  filter(Type != "Other", !is.na(Value)) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School")),
+    Type = factor(Type, levels = c("Attendance", "Enrollment"))
+  )
+# write.csv(data_long_attend, "data_long_attend.csv")
+
+#scatter plot to show distribution of pre-filtered data
+ggplot(data_long_attend, aes(x=factor(Year), y=Value, color=Type)) +
+  geom_jitter(width=0.1, alpha=0.7, size=3) +
+  theme_minimal() +
+  labs(
+    title="Distribution of Attendance vs Enrollment Rates by Year (Pre-filtering)",
+    x="Year",
+    y="Rate (%)",
+    color="Type"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#boxplot to show distribution of pre-filtered data
+ggplot(data_long_attend, aes(x=factor(Year), y=Value, fill=Type)) +
+  geom_boxplot(alpha=0.5, outlier.shape = 16, outlier.color="red") +
+  theme_minimal() +
+  labs(title="Distribution of Attendance vs Enrollment Rates by Year (Pre-filtering)", x="Year", y="Rate (%)") +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+
+
+data_attend <- read_csv("data_long_attend.csv", show_col_types = FALSE)
+
+#select years with most observations
+data_attend_years <- data_attend %>%
+  filter(!Year %in% c(1975, 1986, 1987, 1990, 1991, 1993, 1994, 1995, 1996, 1999))
+write_csv(data_attend_years, "data_long_attend.csv")
+
+#wide format
+data_wide_attend <- data_attend_years %>%
+  pivot_wider(
+    names_from=Type,
+    values_from=Value
+  ) #%>% view()
+
+#combined format
+data_combined_attend <- data_wide_attend %>%
+  group_by(Level, Year) %>%
+  summarise(
+    Attendance = Attendance[!is.na(Attendance)],
+    Enrollment = Enrollment[!is.na(Enrollment)]
+  ) %>%
+  ungroup() %>%
+  mutate(Level = factor(Level, levels = c("Elementary School", "Middle School", "High School"))) #%>% view()
+# write_csv(data_combined_attend, "data_combined_attend.csv")
+
+
+
+data_long <- read_csv("data_long_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School")),
+    Type = factor(Type, levels = c("Attendance", "Enrollment"))
+  )
+
+#scatter plot to show distribution of post-filtered data
+ggplot(data_long, aes(x=factor(Year), y=Value, color=Type)) +
+  geom_jitter(width=0.1, alpha=0.7, size=3) +
+  theme_minimal() +
+  labs(
+    title="Distribution of Attendance vs Enrollment Rates by Year (Post-filtering)",
+    x="Year",
+    y="Rate (%)",
+    color="Type"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#boxplot to show distribution of post-filtered data
+ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
+  geom_boxplot(alpha=0.5, outlier.shape = 16, outlier.color="red") +
+  theme_minimal() +
+  labs(title="Distribution of Attendance vs Enrollment Rates by Year (Post-filtering)", x="Year", y="Rate (%)") +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+
+
+
+data_long <- read_csv("data_long_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School")),
+    Type = factor(Type, levels = c("Attendance", "Enrollment"))
+  )
+
+p_line_per_school_horizontal <- ggplot(data_long, aes(x=Year, y=Value, color=Type)) +
+  geom_line(size=1.2, na.rm=TRUE) +
+  geom_point(size=2, alpha=0.8) +
+  facet_grid(~Level, scales="fixed", switch="y") +
+  theme_minimal() +
+  theme(
+    strip.background=element_rect(fill="grey90", color=NA),
+    panel.spacing=unit(1, "lines")
+  ) +
+  labs(
+    title="Attendance vs. Enrollment Trends in Schools Over Time (USA)",
+    y="Rate (%)",
+    color="Variable"
+  ) +
+  scale_color_manual(values=c("Attendance"="#FF69B4", "Enrollment"="#3bbf8f")
+  )
+# ggsave("line_per_school_horizontal.png", p_line_per_school_horizontal)
+
+p_line_interactive1 <- ggplotly(p_line_per_school_horizontal)
+p_line_interactive1
+
+
+
+data_combined <- read_csv("data_combined_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School"))
+  )
+
+enroll_longitudinal <- ggplot(data_combined, aes(x=Year, y=Enrollment, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title=" Enrollment Observations Longitudinally",
+       x="Year",
+       y="Entrollemnt",
+       color="Level")
+enroll_longitudinal_plotly <- ggplotly(enroll_longitudinal)
+enroll_longitudinal_plotly
+
+
+
+data_combined <- read_csv("data_combined_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School"))
+  )
+
+attend_longitudinal <- ggplot(data_combined, aes(x=Year, y=Attendance, color=Level)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1, alpha=0.25) +
+  theme_minimal() +
+  labs(title=" Attendance Observations Longitudinally",
+       x="Year",
+       y="Attendance",
+       color="Level")
+attend_longitudinal_plotly <- ggplotly(attend_longitudinal)
+attend_longitudinal_plotly
+
+
+
+summary_stats <- data_long %>%
+  group_by(Type, Level) %>%
+  summarise(
+    n = n(),                           
+    Mean = mean(Value, na.rm=TRUE),
+    Median = median(Value, na.rm=TRUE),
+    SD = sd(Value, na.rm=TRUE),
+    Variance = var(Value, na.rm=TRUE),
+    Minimum = min(Value, na.rm=TRUE),
+    Maximum = max(Value, na.rm=TRUE),
+    Range = Maximum - Minimum,
+    Q1 = quantile(Value, 0.25, na.rm=TRUE),
+    Q3 = quantile(Value, 0.75, na.rm=TRUE),
+    IQR = Q3 - Q1,
+  ) %>%
+  arrange(Type, Level)  %>% view()
+
+paged_table(summary_stats)
+# write_csv(summary_stats, "tendency_attend.csv")
+
+mean_plot <- ggplot(summary_stats, aes(x=Mean, y=Type, color=Level)) +
+  geom_point(size=4) +
+  theme_minimal() +
+  labs(title="Means of Attendance and Enrollment Observations",
+       x="Mean",
+       y="Type (Attendance/Enrollment)",
+       color="Level")
+mean_plot
+
+
+
+
+data_combined <- read_csv("data_combined_attend.csv", show_col_types = FALSE)
+
+model <- lm(Enrollment ~ Attendance, data=data_combined)
+
+model_glance <- glance(model) %>%
+  select(r.squared, p.value)
+model_glance <- model_glance %>% mutate(Model = "Enrollment ~ Attendance")
+model_glance <- model_glance %>% select(Model, everything())
+
+pretty_r2_table(model_glance, "R² and p-value for Enrollment ~ Attendance Overall (Red = significant, Black = not significant)")
+
+by_schooling_r2 <- data_combined %>%
+  group_by(Level) %>%
+  do(glance(lm(Enrollment ~ Attendance, data=.))) %>%
+  select(Level,r.squared,p.value)
+
+pretty_r2_table(by_schooling_r2, "R² and p-values by School Level (Red = significant, Black = not significant)")
+
+
+
+
+
+data_long_attend <- read_csv("data_long_attend.csv", show_col_types = FALSE) %>%
+  mutate(
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School")),
+    Type = factor(Type, levels = c("Attendance", "Enrollment"))
+  )
+
+data_wide <- data_long_attend %>%
+  select(Year, Level, Type, Value) %>%
+  pivot_wider(names_from = Type, values_from = Value) %>%
+  arrange(Level, Year) %>%
+  filter(!is.na(Attendance), !is.na(Enrollment))
+
+#regression
+glance_by_level <- data_wide %>%
+  tidyr::nest(data = -Level) %>%
+  mutate(model = purrr::map(data, ~ lm(Attendance ~ Enrollment, data = .x)),
+         stats = purrr::map(model, broom::glance)) %>%
+  tidyr::unnest(stats)
+
+# First, create the text labels from our model summary table
+panel_labels <- glance_by_level %>%
+  transmute(
+    Level,
+    label = paste0("R² = ", round(r.squared, 3), "\np = ", signif(p.value, 3))
+  )
+
+# Determine the best position for the labels on each plot
+label_pos <- data_wide %>%
+  group_by(Level) %>%
+  summarise(x = min(Enrollment, na.rm=T), y = max(Attendance, na.rm=T)) %>%
+  left_join(panel_labels, by = "Level")
+
+p_reg <- ggplot(data_wide, aes(x = Enrollment, y = Attendance)) +
+  geom_point(aes(color = Level), alpha = 0.8, show.legend = FALSE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "black") +
+  facet_wrap(~Level, scales = "free") +
+  geom_label(data = label_pos, aes(x = x, y = y, label = label),
+             hjust = 0, vjust = 1, size = 3.5, label.padding = unit(0.3, "lines")) +
+  labs(
+    title = "Attendance vs. Enrollment with OLS Fits by School Level (USA)",
+    subtitle = "Labels show R-squared and model p-value for each level-specific regression",
+    x = "Enrollment Rate (%)", y = "Attendance Rate (%)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(strip.text = element_text(face = "bold"))
+
+
+#=====================
+#paired t tests
+
+library(dplyr)
+library(tidyr)
+
+
+#by level
+#attend
+data_prepost <- data_long %>%
+  filter(Year %in% c(2015,2016,2017,2020,2021)) %>%
+  mutate(period = ifelse(Year <= 2017, "Pre", "Post"))
+
+att_pairs <- data_prepost %>%
+  filter(Type=="Attendance") %>%
+  mutate(year_pair = case_when(
+    Year==2015 ~ "pair1",
+    Year==2016 ~ "pair2",
+    Year==2017 ~ "pair3",
+    Year==2020 ~ "pair1",
+    Year==2021 ~ "pair2"
+  )) %>%
+  filter(!is.na(year_pair)) %>%
+  select(Level, year_pair, period, Value) %>%
+  pivot_wider(names_from=period, values_from=Value) %>%
+  filter(!is.na(Pre) & !is.na(Post))
+
+
+#level
+att_results <- att_pairs %>%
+  group_by(Level) %>%
+  summarise(
+    t_test = list(t.test(Pre, Post, paired=TRUE)),
+    n_pairs = n()
+  )
+
+#all
+att_combined <- t.test(att_pairs$Pre, att_pairs$Post, paired=TRUE)
+
+#make it into a table
+#levels
+library(dplyr)
+library(purrr)
+library(broom)
+
+att_summary <- att_results %>%
+  mutate(
+    tidy = map(t_test, broom::tidy),
+    glance = map(t_test, broom::glance)
+  ) %>%
+  unnest(tidy) %>%
+  select(Level,n_pairs,estimate,statistic,p.value,conf.low,conf.high) %>%
+  rename(
+    mean_diff = estimate,
+    t_stat = statistic,
+    p_value = p.value,
+    CI_low = conf.low,
+    CI_high = conf.high
+  )
+
+att_summary
+
+#combined
+att_combined_summary <- tibble(
+  mean_diff = att_combined$estimate,
+  t_stat = att_combined$statistic,
+  df = att_combined$parameter,
+  p_value = att_combined$p.value,
+  CI_low = att_combined$conf.int[1],
+  CI_high = att_combined$conf.int[2]
+)
+
+att_combined_summary
+
+#look nicer
+library(kableExtra)
+
+att_summary %>%
+  mutate(
+    sig=ifelse(p_value<0.05,TRUE,FALSE),
+    p_value_fmt=ifelse(sig,
+                       cell_spec(round(p_value,4),"html",bold=TRUE,color="red"),
+                       cell_spec(round(p_value,4),"html"))
+  ) %>%
+  select(Level,n_pairs,mean_diff,t_stat,p_value=p_value_fmt,CI_low,CI_high) %>%
+  rename(
+    `Level`=Level,
+    `Pairs`=n_pairs,
+    `Mean Diff`=mean_diff,
+    `t-value`=t_stat,
+    `p-value`=p_value,
+    `CI Low`=CI_low,
+    `CI High`=CI_high
+  ) %>%
+  kable("html",escape=FALSE,digits=3,
+        caption="Attendance Paired t-Tests by Level",
+        align="lllllll") %>%
+  kable_styling(full_width=FALSE,position="center",
+                bootstrap_options=c("striped","hover"))
+
+
+
+att_combined_summary %>%
+  mutate(
+    sig=p_value<0.05,
+    p_value_fmt=ifelse(sig,
+                       cell_spec(round(p_value,4),"html",bold=TRUE,color="red"),
+                       cell_spec(round(p_value,4),"html"))
+  ) %>%
+  select(mean_diff,t_stat,df,p_value=p_value_fmt,CI_low,CI_high) %>%
+  rename(
+    `Mean Diff`=mean_diff,
+    `t-value`=t_stat,
+    `df`=df,
+    `p-value`=p_value,
+    `CI Low`=CI_low,
+    `CI High`=CI_high
+  ) %>%
+  kable("html",escape=FALSE,digits=3,
+        caption="Combined Attendance Paired t-Test",
+        align="llllll") %>%
+  kable_styling(full_width=FALSE,position="center",
+                bootstrap_options=c("striped","hover"))
+
+
+#enrollment 
+data_prepost <- data_wide_attend %>%
+  filter(Year %in% c(2015,2016,2017,2020,2021,2022)) %>%
+  mutate(period = ifelse(Year <= 2017, "Pre", "Post"))
+
+enr_pairs <- data_prepost %>%
+  filter(!is.na(Enrollment)) %>%
+  mutate(year_pair = case_when(
+    Year==2015 ~ "pair1",
+    Year==2016 ~ "pair2",
+    Year==2017 ~ "pair3",
+    Year==2020 ~ "pair1",
+    Year==2021 ~ "pair2",
+    Year==2022 ~ "pair3"
+  )) %>%
+  select(Level, year_pair, period, Enrollment) %>%
+  pivot_wider(names_from=period, values_from=Enrollment) %>%
+  filter(!is.na(Pre) & !is.na(Post))
+
+enr_results <- enr_pairs %>%
+  group_by(Level) %>%
+  summarise(
+    t_test = list(t.test(Pre, Post, paired=TRUE)),
+    n_pairs = n()
+  )
+
+enr_combined <- t.test(enr_pairs$Pre, enr_pairs$Post, paired=TRUE)
+
+enr_summary <- enr_results %>%
+  mutate(
+    tidy = map(t_test, broom::tidy)
+  ) %>%
+  unnest(tidy) %>%
+  mutate(
+    sig = p.value < 0.05,
+    p_value_fmt = ifelse(sig,
+                         cell_spec(round(p.value,4),"html",bold=TRUE,color="red"),
+                         cell_spec(round(p.value,4),"html")),
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School"))
+  ) %>%
+  arrange(Level) %>%
+  select(Level, n_pairs, estimate, statistic, p_value_fmt, conf.low, conf.high) %>%
+  rename(
+    `Level` = Level,
+    `Pairs` = n_pairs,
+    `Mean Diff` = estimate,
+    `t-value` = statistic,
+    `p-value` = p_value_fmt,
+    `CI Low` = conf.low,
+    `CI High` = conf.high
+  ) %>%
+  kable("html", escape = FALSE, digits = 3, caption = "Enrollment Paired t-Tests by Level",
+        align = "lllllll") %>%
+  kable_styling(full_width = FALSE, position = "center",
+                bootstrap_options = c("striped", "hover"))
+
+enr_summary
+
+enr_combined_summary <- tibble(
+  mean_diff = enr_combined$estimate,
+  t_stat = enr_combined$statistic,
+  df = enr_combined$parameter,
+  p_value = enr_combined$p.value,
+  CI_low = enr_combined$conf.int[1],
+  CI_high = enr_combined$conf.int[2]
+) %>%
+  mutate(
+    sig = p_value < 0.05,
+    p_value_fmt = ifelse(sig,
+                         cell_spec(round(p_value, 4), "html", bold = TRUE, color = "red"),
+                         cell_spec(round(p_value, 4), "html"))
+  ) %>%
+  select(mean_diff, t_stat, df, p_value = p_value_fmt, CI_low, CI_high) %>%
+  rename(
+    `Mean Diff` = mean_diff,
+    `t-value` = t_stat,
+    `df` = df,
+    `p-value` = p_value,
+    `CI Low` = CI_low,
+    `CI High` = CI_high
+  ) %>%
+  kable("html", escape = FALSE, digits = 3, caption = "Combined Enrollment Paired t-Test", align = "llllll") %>%
+  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover"))
+
+enr_combined_summary
+
+
+
+
+
+
+
