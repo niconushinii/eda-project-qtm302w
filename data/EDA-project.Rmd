@@ -5,7 +5,7 @@ date: "2025-10-19"
 output: html_document
 ---
 
-# 1. Introduction
+# 1. Project Introduction: Education Statistics
 
 ### Description of the Project
 
@@ -26,15 +26,17 @@ We selected **two major indicator categories** that reflect different dimensions
 
 ### Motivation
 
-When we were brainstorming datasets to work with, we had difficulty choosing a topic because the possibilities were endless. We looked at several options from public health to climate to economics, but we eventually narrowed it down to education. This is something that all of us are connected to and that our classmates and readers can easily relate to. We initially considered focusing on Emory-specific data but broadened our scope to the World Bank’s Education Statistics for its larger context and long-term coverage.
+Education is a topic that all of us are connected to as students who grew up in the public school system, and one that our classmates and readers can easily relate to. While a focus on Emory-specific data would offer localized information, broadening our scope to the World Bank’s Education Statistics offers larger context and long-term coverage.
 
-As students at an American university, we were especially interested in examining data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment and attendance can reveal whether increased investment in education translates into better participation and equity. This directly relates to us, as college students who have undergone the three main levels of education and were told that our own efforts, most notably in high school, would determine our outcomes later in life. 
+We are especially interested in examining data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment and attendance can reveal how nation-wide policy changes or other events have impacted these measures. This directly relates to us, as college students who have undergone the three main levels of education and were told that our own efforts, most notably in high school, would determine our outcomes later in life. 
 
-Attendance and enrollment jumped out to us as variables of interest due to their potential interaction with one another. Also, we as high school students during COVID personally experienced a shift in both attendance and enrollment. This change took place throughout our schools and we seek to explore whether this shift occured nation-wide.
+Attendance and enrollment jump out to us as variables of interest due to their potential interaction with one another. Also, as high school students during COVID we personally experienced a shift in both attendance and enrollment. This change took place throughout our schools and we seek to explore whether this shift occurred nation-wide.
+
+Prior literature shows declines in attendance during the pandemic with a minimal recovery in the following years years, alongside temporary decreases in enrollment. Our analysis extends that work by looking into whether these patterns persist at a national level.
 
 ---
 
-# 2. Dataset
+# 2. Dataset: Attendance and enrollment rates
 
 Our analysis draws on the World Bank’s Education Statistics (EdStats) dataset, a comprehensive collection of global indicators on education access, participation, efficiency, outcomes, and expenditure. We specifically use the United States subset, covering indicators related to enrollment and  attendance. The data span multiple decades, allowing us an examination of both long-term structural trends and shorter-term policy effects.
 
@@ -42,7 +44,7 @@ We also chose to narrow our analysis to only sex-combined variables, as each of 
 
 ---
 
-# 3. Setup & Packages
+# 3. Setup & Packages: Setting up our global packages
 We will perform **Exploratory Data Analysis (EDA)** in R using the **tidyverse** suite of libraries along with some supplementary packages for smoother visualization.  
 Our analysis will include the following components:
 
@@ -101,7 +103,7 @@ opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
 
 ---
 
-# 4. Data Import & Cleaning
+# 4. Data Import & Cleaning: Making data usable for analysis
 
 This dataset is very large and contains data from various countries. As previously mentioned, we are focusing only on the US data. We start from reading the raw EdStats dataset (`EdStats_v01.csv`) and filter for only the United States data (`Country code == "USA"`). We also drop fully empty columns (`2024` column) as they will not be needed in our analysis. As a check, we print any columns that contain all NA values and proceed only if the the output is empty. Then, we write the filtered dataset to `EdStats_USA.csv` so that later chunks can work only with our US data without filtering for it multiple times.
 
@@ -150,7 +152,8 @@ data_filter_attend <- data %>%
 
 ---
 
-# 5. Attendance vs. Enrollment — Reshape, Compare, and Quantify
+# 5. Attendance vs. Enrollment — Reshape, Compare, and Quantify  
+
 The following chunk expands our analysis of `EdStats_attend.csv` to quantify and visualize the relationship between school **enrollment** and **attendance** across education levels in the United States.  
 After reshaping the dataset into tidy long form, we standardize indicator names to capture both spellings of “enrolment/enrollment” and collapse duplicate series to obtain a single observation for each *year × level × type* combination. The long format allows us to have columns for country name and country code (only really needed for reproducibility), variable name, variable value, year, type (simplified variable name: attendance/enrollment), and level (renamed: primary school to elementary school, lower secondary to middle school, and upper secondary to high school). Previously, the "indicator column" contained school type, school level, and sex all in one string. With this new format, we can plot variables in ggplot with column names. 
 
@@ -162,6 +165,8 @@ After reshaping the dataset into tidy long form, we standardize indicator names 
 
 **Reading tip:**  
 Focus on whether attendance consistently trails enrollment and whether that gap changes across levels or decades. High correlation indicates structural progress—both metrics rising together—while a persistent positive gap suggests that access alone does not guarantee participation.
+
+## 5.1. What does the data look like? Pre- and post- filtering spread of each variable    
 
 ```{r}
 data_attend <- read_csv("EdStats_attend.csv", show_col_types = FALSE)
@@ -276,6 +281,8 @@ ggplot(data_long, aes(x=factor(Year), y=Value, fill=Type)) +
 
 ```
 
+## 5.2. Preliminary trends in each variable  
+
 We now look at the trends in the data. Using our long and combined datasets, we can build visuals to display how attendance and enrollment rates change as time progresses. We re-factor the data after loading it in so that the variables are ordered correctly in the plots, and then build the plots themselves.
 
 The following three plots presents annual attendance and enrollment rates for US elementary, middle, and high schools. Each color represents a different variable as can be seen in the legend. Each panel shows how these two metrics evolve side by side within a given school level. Enrollment rates include more fluctuation than attendance rates for all three levels of schools, especially in high schools. Please note that attendance data is available one year later than enrollment data.
@@ -311,6 +318,8 @@ p_line_interactive1 <- ggplotly(p_line_per_school_horizontal)
 p_line_interactive1
 
 ```
+
+## 5.3. Longitudinal, level-specific trends in each variable  
 
 Next, we visualized how enrollment trends changed over time across the three different school levels. Each color represents the variable shown in the legend, each line represents the linear trend, and shaded regions show 95% confidence intervals. We see a steady increase in high schools, which may suggest possible demographic shifts or improved retention in upper grades. In contrast, enrollment in elementary schools slightly decreased over time, indicating declining birth cohorts feeding into early education. Middle school enrollments remained relatively stable. It is important to note the COVID quarantine started in early 2020, and both Elementary and Middle school enrollment was lowest the following year.
 
@@ -356,6 +365,8 @@ attend_longitudinal_plotly <- ggplotly(attend_longitudinal)
 attend_longitudinal_plotly
 ```
 
+## 5.4. Tendancey measures for filtered data  
+
 The following statistics table summarizes the central tendency and variability of attendance and enrollment rates across US elementary, middle, and high schools. Click the arrow in the top right corner to see the rest of the values.
 
 For attendance, mean rates range from 96.4% to 97.7%, indicating high participation levels. Elementary schools exhibit the widest range (3.39%) and the highest variability (SD = 1.32). This suggests that there is greater fluctuation in attendance among younger students.
@@ -393,6 +404,8 @@ mean_plot <- ggplot(summary_stats, aes(x=Mean, y=Type, color=Level)) +
        color="Level")
 mean_plot
 ```
+
+## 5.5. Statistical tests  
 
 Next, we calculate R^2 and p-values for attendance and enrollment data combined. This did not return anything significant, and given that we only have three levels (elementary, middle, high school) per year we don't have enough statistical power to run the model filtered in that way. If we filter by school level, we have 5 observations per level. It is important to note that while n=5 is technically valid, it is very low for significance testing and therefore should be taken with a grain of salt. 
 
@@ -474,7 +487,7 @@ print(p_reg)
 
 ---
 
-# 7. Discussion
+# 6. Discussion
 
 ### Interim Takeaways
 - **Enrollment vs. Attendance:** Attendance rates are typically lower than enrollment rates at all levels, though the gap varies by level and year. Attendance across school levels took a large dip in 2020, which could be related to the COVID quarantine that was put into place early into that year.  
@@ -494,7 +507,7 @@ Consider adding `sessionInfo()` at the end to document package versions.
 
 ---
 
-# 8. Works Cited
+# 7. Works Cited
 
 World Bank Group. Education Statistics. World Bank Data Catalog, 2022, https://datacatalog.worldbank.org/search/dataset/0038480/Education-Statistics.
 
