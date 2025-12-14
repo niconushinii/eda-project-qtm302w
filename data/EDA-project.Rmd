@@ -15,7 +15,7 @@ We will analyze each variable across different categories and explore which tren
 By focusing on longitudinal, single-nation data, we aim to identify potential patterns and meaningful interactions that could offer insight into how the attendance and enrollment of students has changed over time in the United States public school system. From there, we will draw hypotheses about why these trends may have arisen.
 
 The analysis of various indicators allows us to examine temporal changes and potential external factors that might shape educational outcomes.  
-We selected **two major indicator categories** that reflect different dimensions of the education system. These indicators will be explored individually and together.
+We focus on **two major indicator categories** that reflect different dimensions of the education system. These indicators will be explored individually and together.
 
 1. **Enrollment Rate**  
    We will compare student enrollment rates across different levels of schooling (elementary, middle, and high school) and different years.
@@ -28,9 +28,9 @@ We selected **two major indicator categories** that reflect different dimensions
 
 Education is a topic that all of us are connected to as students who grew up in the public school system, and one that our classmates and readers can easily relate to. While a focus on Emory-specific data would offer localized information, broadening our scope to the World Bank’s Education Statistics offers larger context and long-term coverage.
 
-We are especially interested in examining data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment and attendance can reveal how nation-wide policy changes or other events have impacted these measures. This directly relates to us, as college students who have undergone the three main levels of education and were told that our own efforts, most notably in high school, would determine our outcomes later in life. 
+We focus on data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment and attendance can show how nation-wide policy changes and major events shape these measures. This matters to us as students who moved through all three levels of schooling and saw hour own efforts, most notably in high school, would determine our outcomes later in life. 
 
-Attendance and enrollment jump out to us as variables of interest due to their potential interaction with one another. Also, as high school students during COVID we personally experienced a shift in both attendance and enrollment. This change took place throughout our schools and we seek to explore whether this shift occurred nation-wide.
+Attendance and enrollment jump out to us as variables of interest due to their potential interaction with one another. Because we experienced schooling during COVID, we examine whether national trends reflect similar shifts. We test whether similar shifts appear at the national level
 
 Prior literature shows declines in attendance during the pandemic with a minimal recovery in the following years years, alongside temporary decreases in enrollment. Our analysis extends that work by looking into whether these patterns persist at a national level.
 
@@ -40,7 +40,7 @@ Prior literature shows declines in attendance during the pandemic with a minimal
 
 Our analysis draws on the World Bank’s Education Statistics (EdStats) dataset, a comprehensive collection of global indicators on education access, participation, efficiency, outcomes, and expenditure. We specifically use the United States subset, covering indicators related to enrollment and  attendance. The data span multiple decades, allowing us an examination of both long-term structural trends and shorter-term policy effects.
 
-We also chose to narrow our analysis to only sex-combined variables, as each of them were present with male-only, female-only, and male and female data. Given the scope of our project, we figured that it would make more sense to explore the sex-combined variables in more depth rather than three less detailed explorations of all three levels. 
+We narrow our analysis to only sex-combined variables, as each of them were present with male-only, female-only, and male and female data. Given the scope of our project, it makes more sense to explore the sex-combined variables in more depth rather than three less detailed explorations of all three levels. 
 
 ---
 
@@ -163,8 +163,7 @@ After reshaping the dataset into tidy long form, we standardize indicator names 
 - Produce **summary statistics** (mean, median, standard deviation, IQR) for each education level and variable type.  
 - Export the descriptive table to `tendency_attend.csv` for reproducibility.
 
-**Reading tip:**  
-Focus on whether attendance consistently trails enrollment and whether that gap changes across levels or decades. High correlation indicates structural progress—both metrics rising together—while a persistent positive gap suggests that access alone does not guarantee participation.
+In interpreting the following plots, we focus on whether attendance consistently trails enrollment and whether that gap changes across levels or decades. High correlation would suggest structural progress, while a persistent gap would indicate that access alone does not guarantee participation.
 
 ## 5.1. What does the data look like? Pre- and post- filtering spread of each variable    
 
@@ -489,7 +488,7 @@ print(p_reg)
 
 # 6. Discussion
 
-### Interim Takeaways
+### Takeaways and Next Questions
 - **Enrollment vs. Attendance:** Attendance rates are typically lower than enrollment rates at all levels, though the gap varies by level and year. Attendance across school levels took a large dip in 2020, which could be related to the COVID quarantine that was put into place early into that year.  
 
 Middle and high school enrollment rates are higher than they were in 2005, and while their attendance rates took the dip in 2020 they look be increasing back to where they were prior to COVID. Elementary school enrollment rates are lower now than they have been since before 2005, and have been falling since 2016. This could be due to a number of factors, such as policies that de-fund primary public schools or a shift towards private schooling and homeschooling.  
@@ -499,6 +498,9 @@ Further analysis revealed that mean enrollment rates were consistently higher th
 We did not find any statistical significance between attendance and enrollment rates, however with the amount of data we had post-filtering we were limited in how we could partition the data to search for smaller trends. We actually did find statistical significance in the decreasing attendance rates over time, as well as a relatively strong negative linear relationship, but we were unable to include that and fully explain it while staying within the word count for this assignment. We elected to exclude that table and analysis in favor of further exploratory analysis.
 
 Finally, we ran a model for linear regression by school type. Elementary schools showed a weak positive linear relationship between enrollment and attendance, while middle and high schools showed a weak negative linear relationship. This was unexpected as a negative linear relationship between these variables implies that as one variable increases the other will decrease, and we expect that enrollment and attendance increase/decrease together. Given that we did not find any statistical significance between the two variables, it is entirely plausible that they could have a negative linear relationship.
+
+Future work could extend this analysis in several directions. Examining attendance and enrollment at the state or district level would increase statistical power and may reveal heterogeneity masked in national averages. Incorporating policy-level data - such as attendance reporting requirements, funding changes, or shifts to hybrid instruction - could help distinguish behavioral change from measurement change during the pandemic period. Extending the dataset beyond 2022 would also clarify whether post-COVID attendance patterns represent a temporary disruption or a longer-term structural shift.
+
 
 **Reproducibility Notes**  
 All intermediate datasets and figures are written to disk (`EdStats_USA.csv`, `EdStats_attend.csv`, `data_attend.csv`, `data_long_attend.csv`, `data_combined.csv`, and exported PNGs).  
