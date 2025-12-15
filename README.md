@@ -2,7 +2,8 @@
 ### *Education in Context: Exploring Long-Term Trends in U.S. School Indicators*  
 
 **Course:** ENGRD/QTM 302W — Technical Writing for Data Science  
-**Date:** October 2025  
+**Date:** December 2025  
+**Authors:** Anushka Basu, Minjoo Kim, Danielle Klewans
 
 ---
 
@@ -51,7 +52,7 @@ Following best practices for reproducible research, our notebook includes:
 - Data cleaning and restructuring into tidy long-form tables  
 - Visual exploration of **pre- and post-filter distributions**  
 - Descriptive statistics (mean, median, variance, quartiles, IQR)  
-- Correlation and regression modeling to test variable relationships  
+- Correlation, t-test and regression modelings to test variable relationships  
 - Interactive visualizations using `plotly` for longitudinal comparisons  
 
 ---
