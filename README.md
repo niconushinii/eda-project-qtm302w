@@ -30,8 +30,6 @@ Our goal is to understand to what extent did the COVID 19 pandemic significantly
 The dataset spans several decades and allows us to analyze how participation and resource allocation shift across **school levels** (primary, secondary, tertiary) and **years** (2005–2022).  
 By combining exploratory data analysis and regression modeling, we assess how the two major categories of enrollment and attendance reflect different dimensions of the education system.
 
----
-
 ## Analytical Focus  
 
 We selected two major indicator categories representing different dimensions of the education system:
@@ -44,8 +42,6 @@ We selected two major indicator categories representing different dimensions of 
 - Compare student attendance rates across different levels of schooling and different years.
 - **Finding:** Did not change by a tangible amount before and after pandemic.
 
----
-
 ## Motivation  
 When brainstorming datasets, we initially considered public health and climate data but chose **education** because it is something we all experience and can interpret meaningfully.  
 Education is a universal and policy-relevant domain, and its trends often reflect larger social and economic forces.  
@@ -54,8 +50,6 @@ As students in an American university, we were especially drawn to exploring nat
 Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment and attendance can show how nation-wide policy changes and major events shape these measures. This matters to us as students who moved through all three levels of schooling and saw hour own efforts, most notably in high school, would determine our outcomes later in life.
 
 Attendance and enrollment jump out to us as variables of interest due to their potential interaction with one another. Because we experienced schooling during COVID, we examine whether national trends reflect similar shifts. We test whether similar shifts appear at the national level.
-
----
 
 ## Key Findings  
 - **Enrollment vs. Attendance**  
