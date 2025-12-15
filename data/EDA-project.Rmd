@@ -12,7 +12,7 @@ output: html_document
 This project uses the **World Bank’s Education Statistics** dataset to explore long-term trends and relationships among key indicators of the US education system.
 Our goal is to understand how certain aspects of education have evolved over time and how changes in one variable may influence changes in another.
 We will analyze each variable across different categories and explore which trends emerge from doing so.
-By focusing on longitudinal, single-nation data, we aim to identify potential patterns and meaningful interactions that could offer insight into how the attendance and enrollment of students has changed after COVID-19 pandemic in the United States public school system. From there, we will draw hypotheses about why these trends may have arisen.
+By focusing on longitudinal, single-nation data, we aim to identify potential patterns and meaningful interactions that could offer insight into how the attendance and enrollment of students has changed before and after COVID-19 pandemic in the United States public school system. From there, we will draw hypotheses about why these trends may have arisen.
 
 The analysis of various indicators allows us to examine temporal changes and potential external factors that might shape educational outcomes.  
 We focus on **two major indicator categories** that reflect different dimensions of the education system. These indicators will be explored individually and together.
@@ -30,7 +30,7 @@ Education is a topic that all of us are connected to as students who grew up in 
 
 We focus on data trends within the United States. Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment and attendance can show how nation-wide policy changes and major events shape these measures. This matters to us as students who moved through all three levels of schooling and saw hour own efforts, most notably in high school, would determine our outcomes later in life. 
 
-Attendance and enrollment jump out to us as variables of interest due to their potential interaction with one another. Because we experienced schooling during COVID, we examine whether national trends reflect similar shifts. We test whether similar shifts appear at the national level
+Attendance and enrollment jump out to us as variables of interest due to their potential interaction with one another. Because we experienced schooling during COVID, we examine whether national trends reflect similar shifts. We test whether similar shifts appear at the national level.
 
 Prior literature shows declines in attendance during the pandemic with a minimal recovery in the following years years, alongside temporary decreases in enrollment. Our analysis extends that work by looking into whether these patterns persist at a national level.
 
