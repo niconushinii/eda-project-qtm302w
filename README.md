@@ -1,5 +1,5 @@
-# QTM 302W EDA Project — Group 3  
-### *Education in Context: Exploring Long-Term Trends in U.S. School Indicators*  
+# QTM 302W Research Project — Group 3  
+### *Pandemic-Era Changes in US Education*  
 
 **Course:** ENGRD/QTM 302W — Technical Writing for Data Science  
 **Date:** December 2025  
@@ -8,31 +8,25 @@
 ---
 
 ## Description  
-This project uses the **World Bank’s Education Statistics** dataset to explore long-term trends and relationships among key indicators of the U.S. education system.  
-Our goal is to understand how structural aspects of education — such as access, staffing, and outcomes — have evolved over time, and how changes in one variable may (or may not) predict changes in another.  
+This project uses the **World Bank’s Education Statistics** dataset to explore the impact of COVID 19 on US public school and relationships among key indicators of the U.S. education system.  
+Our goal is to understand to what extent did the COVID 19 pandemic significantly altered student attendance and enrollment rate in the United States.  
 
 The dataset spans several decades and allows us to analyze how participation and resource allocation shift across **school levels** (primary, secondary, tertiary) and **years** (2005–2022).  
-By combining exploratory data analysis and regression modeling, we assess the strength and direction of relationships among variables that represent student participation and institutional investment.
+By combining exploratory data analysis and regression modeling, we assess how the two major categories of enrollment and attendance reflect different dimensions of the education system.
 
 ---
 
 ## Analytical Focus  
 
-We selected three major indicator categories representing different dimensions of the education system:
+We selected two major indicator categories representing different dimensions of the education system:
 
-### 1. Enrollment Rate vs Attendance Rate  
-- Investigates whether higher enrollment corresponds with consistent attendance over time.  
-- Includes pre- and post-filtering distribution checks, correlation analysis, and linear regressions by school type.  
-- **Finding:** Despite high average rates, correlations are weak and statistically insignificant, suggesting that increased enrollment does not reliably predict attendance.  
+### 1. Enrollment Rate
+- Compare student enrollment rates across different levels of schooling and different years.
+- **Finding:** Small but statistically significant increase in average attendance following the pandemic.  
 
-### 2. Number of Teachers vs Teaching Staff Compensation  
-- Explores whether compensation levels rise proportionally with staffing levels across school stages.  
-- Includes time-series plots, central tendency measures, and discussion of funding patterns.  
-- **Finding:** Teacher counts remain stable while compensation increases slightly, implying that funding shifts may not directly affect staffing levels.  
-
-### 3. (Planned) Educational Attainment by Sex  
-- Tracks differences in educational outcomes between male and female populations over time.  
-- Extends the analysis to measure broader social progress and equity if data coverage allows.  
+### 2. Attendance Rate
+- Compare student attendance rates across different levels of schooling and different years.
+- **Finding:** Did not change by a tangible amount before and after pandemic.
 
 ---
 
@@ -41,7 +35,7 @@ When brainstorming datasets, we initially considered public health and climate d
 Education is a universal and policy-relevant domain, and its trends often reflect larger social and economic forces.  
 
 As students in an American university, we were especially drawn to exploring national-level data.  
-U.S. education policy and access have changed dramatically in recent decades, making it an ideal context for studying how participation and resource allocation interact.  
+U.S. education policy and access have changed dramatically in recent decades after COVID, making it an ideal context for studying how US education system changed following the pandemic.  
 This project also gave us a chance to reflect on our own experiences — *how much do individual outcomes depend on student effort versus institutional support?*  
 
 ---
