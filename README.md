@@ -5,6 +5,22 @@
 **Date:** December 2025  
 **Authors:** Anushka Basu, Minjoo Kim, Danielle Klewans
 
+## Project Objective
+This project performs analysis of World Bank's Education Statistics (EdStats) dataset to understand how COVID-19 pandemic altered student attendance and enrollment rates in the United States.
+
+## Methods Used
+Our exploratory data analysis (EDA) was conducted in **R** using the `tidyverse`, `plotly`, and `broom` libraries.  
+Following best practices for reproducible research, our notebook includes:  
+- Data cleaning and restructuring into tidy long-form tables  
+- Visual exploration of **pre- and post-filter distributions**  
+- Descriptive statistics (mean, median, variance, quartiles, IQR)  
+- Correlation and regression modeling to test variable relationships  
+- Interactive visualizations using `plotly` for longitudinal comparisons  
+
+## List of Platforms/Languages 
+- R 
+- libraries: plotly
+
 ---
 
 ## Description  
@@ -41,17 +57,6 @@ Attendance and enrollment jump out to us as variables of interest due to their p
 
 ---
 
-## Methods  
-Our exploratory data analysis (EDA) was conducted in **R** using the `tidyverse`, `plotly`, and `broom` libraries.  
-Following best practices for reproducible research, our notebook includes:  
-- Data cleaning and restructuring into tidy long-form tables  
-- Visual exploration of **pre- and post-filter distributions**  
-- Descriptive statistics (mean, median, variance, quartiles, IQR)  
-- Correlation and regression modeling to test variable relationships  
-- Interactive visualizations using `plotly` for longitudinal comparisons  
-
----
-
 ## Key Findings  
 - **Enrollment vs. Attendance**  
   Attendance rates are typically lower than enrollment rates at all levels, though the gap varies by level and year.  
@@ -59,3 +64,15 @@ Following best practices for reproducible research, our notebook includes:
 - Overall, **education indicators remain high but weakly related**, revealing structural independence among access, participation, and resource metrics.  
 
 ---
+
+## Getting Stated
+
+1. Clone this repo.
+```bash
+git clone https://github.com/niconushinii/eda-project-qtm302w.git
+cd QTM302W-group3
+```
+2. Raw Data is being kept [here](data/EdStats_v01.csv) within this repo.
+3. Data processing/transformation scripts are being kept [here](EDA-project.Rmd)
+
+## Directory Structure
