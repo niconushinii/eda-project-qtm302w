@@ -35,8 +35,9 @@ When brainstorming datasets, we initially considered public health and climate d
 Education is a universal and policy-relevant domain, and its trends often reflect larger social and economic forces.  
 
 As students in an American university, we were especially drawn to exploring national-level data.  
-U.S. education policy and access have changed dramatically in recent decades after COVID, making it an ideal context for studying how US education system changed following the pandemic.  
-This project also gave us a chance to reflect on our own experiences — *how much do individual outcomes depend on student effort versus institutional support?*  
+Education policy and access here have evolved significantly over time, and exploring long-term patterns in enrollment and attendance can show how nation-wide policy changes and major events shape these measures. This matters to us as students who moved through all three levels of schooling and saw hour own efforts, most notably in high school, would determine our outcomes later in life.
+
+Attendance and enrollment jump out to us as variables of interest due to their potential interaction with one another. Because we experienced schooling during COVID, we examine whether national trends reflect similar shifts. We test whether similar shifts appear at the national level.
 
 ---
 
@@ -46,16 +47,15 @@ Following best practices for reproducible research, our notebook includes:
 - Data cleaning and restructuring into tidy long-form tables  
 - Visual exploration of **pre- and post-filter distributions**  
 - Descriptive statistics (mean, median, variance, quartiles, IQR)  
-- Correlation, t-test and regression modelings to test variable relationships  
+- Correlation and regression modeling to test variable relationships  
 - Interactive visualizations using `plotly` for longitudinal comparisons  
 
 ---
 
 ## Key Findings  
-- **High enrollment does not guarantee consistent attendance.**  
-  Regression models show weak and statistically insignificant relationships between the two.  
+- **Enrollment vs. Attendance**  
+  Attendance rates are typically lower than enrollment rates at all levels, though the gap varies by level and year.  
 - **Attendance rates have gradually declined**, especially in elementary schools, likely reflecting disruptions such as COVID-19.  
-- **Teacher compensation has risen slightly while staffing remained stable**, suggesting policy or funding changes independent of employment levels.  
 - Overall, **education indicators remain high but weakly related**, revealing structural independence among access, participation, and resource metrics.  
 
 ---
