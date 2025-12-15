@@ -5,10 +5,10 @@
 **Date:** December 2025  
 **Authors:** Anushka Basu, Minjoo Kim, Danielle Klewans
 
-## Project Objective
+### Project Objective
 This project performs analysis of World Bank's Education Statistics (EdStats) dataset to understand how COVID-19 pandemic altered student attendance and enrollment rates in the United States.
 
-## Methods Used
+### Methods Used
 Our exploratory data analysis (EDA) was conducted in **R** using the `tidyverse`, `plotly`, and `broom` libraries.  
 Following best practices for reproducible research, our notebook includes:  
 - Data cleaning and restructuring into tidy long-form tables  
@@ -17,7 +17,7 @@ Following best practices for reproducible research, our notebook includes:
 - Correlation and regression modeling to test variable relationships  
 - Interactive visualizations using `plotly` for longitudinal comparisons  
 
-## List of Platforms/Languages 
+### List of Platforms/Languages 
 - R 
 - libraries: plotly
 
@@ -70,9 +70,42 @@ Attendance and enrollment jump out to us as variables of interest due to their p
 1. Clone this repo.
 ```bash
 git clone https://github.com/niconushinii/eda-project-qtm302w.git
-cd QTM302W-group3
+cd eda-project-qtm302w
 ```
 2. Raw Data is being kept [here](data/EdStats_v01.csv) within this repo.
 3. Data processing/transformation scripts are being kept [here](EDA-project.Rmd)
 
 ## Directory Structure
+```bash
+eda-project-qtm302w/
+│
+├── data/
+│   ├── regression/
+│       ├── regression.rmd
+│       └── regression.html
+│   ├── supplemental_plots/
+│       ├── Observation_counts_school_attend.png
+│       ├── Observation_counts_variable_attend(2).png
+│       ├── Observation_counts_variable_attend.png
+│       ├── Observation_counts_year_attend(2).png
+│       ├── Observation_counts_year_attend.png
+│       ├── line_per_school_horizontal.png
+│       └── line_per_school_vertical.png
+│   ├── t-test/
+│       └── visual_presentation.R
+│   ├── EdStats_USA.csv
+│   ├── EdStats_attend.csv
+│   ├── EdStats_v01.csv                 # Raw EdStats dataset
+│   ├── data_combined_attend.csv
+│   ├── data_long_attend.csv
+│   └── tendency_attend.csv
+│
+├── renv/                              # R package environment (for reproducibility)
+│   ├── activate.R
+│   ├── settings.json
+│   └── .gitignore
+│
+├── EDA-project.Rmd                    # Main analysis notebook (RMarkdown)
+├── EDA-project.html                   # Rendered HTML report
+└── README.md                          # Project documentation
+```
