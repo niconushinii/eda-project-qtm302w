@@ -482,6 +482,195 @@ p_reg <- ggplot(data_wide, aes(x = Enrollment, y = Attendance)) +
 print(p_reg)
 ```
 
+Finally, we conducted paired t-tests for both attendance and enrollment data. Please note that for the sake of this analysis we are letting 2020 and onward be post-pandemic years. Each pre-pandemic year was paired with a post-pandemic year five years later. As can be seen in the tables below, we only found significant results for attendance rates before and after the pandemic (p=0.019, t=3.42, 95% CI ∌ 0) showing that attendance actually increased after the pandemic by about 1.5 percent. This differs from our expectation but may be due to the fact that we selected 2020 and 2021 and post-pandemic years while much of the literature considers 2020 to be during the pandemic. Our tests per school level for attendance and our tests for enrollment did not return any significant results.   
+
+```{r}
+#attendance
+#define pre and post years for pairing
+data_prepost <- data_long %>%
+  filter(Year %in% c(2015,2016,2017,2020,2021)) %>%
+  mutate(period = ifelse(Year <= 2017, "Pre", "Post"))
+att_pairs <- data_prepost %>%
+  filter(Type=="Attendance") %>%
+  mutate(year_pair = case_when(
+    Year==2015 ~ "pair1",
+    Year==2016 ~ "pair2",
+    Year==2017 ~ "pair3",
+    Year==2020 ~ "pair1",
+    Year==2021 ~ "pair2"
+  )) %>%
+  filter(!is.na(year_pair)) %>%
+  select(Level, year_pair, period, Value) %>%
+  pivot_wider(names_from=period, values_from=Value) %>%
+  filter(!is.na(Pre) & !is.na(Post))
+
+#test by level and combined
+att_results <- att_pairs %>%
+  group_by(Level) %>%
+  summarise(
+    t_test = list(t.test(Pre, Post, paired=TRUE)),
+    n_pairs = n()
+  )
+att_combined <- t.test(att_pairs$Pre, att_pairs$Post, paired=TRUE)
+
+#make it into a table
+#levels
+att_summary <- att_results %>%
+  mutate(
+    tidy = map(t_test, broom::tidy),
+    glance = map(t_test, broom::glance)
+  ) %>%
+  unnest(tidy) %>%
+  select(Level,n_pairs,estimate,statistic,p.value,conf.low,conf.high) %>%
+  rename(
+    mean_diff = estimate,
+    t_stat = statistic,
+    p_value = p.value,
+    CI_low = conf.low,
+    CI_high = conf.high
+  )
+
+#combined
+att_combined_summary <- tibble(
+  mean_diff = att_combined$estimate,
+  t_stat = att_combined$statistic,
+  df = att_combined$parameter,
+  p_value = att_combined$p.value,
+  CI_low = att_combined$conf.int[1],
+  CI_high = att_combined$conf.int[2]
+)
+
+#make tables look nicer
+att_summary %>%
+  mutate(
+    sig=ifelse(p_value<0.05,TRUE,FALSE),
+    p_value_fmt=ifelse(sig,
+                       cell_spec(round(p_value,4),"html",bold=TRUE,color="red"),
+                       cell_spec(round(p_value,4),"html"))
+  ) %>%
+  select(Level,n_pairs,mean_diff,t_stat,p_value=p_value_fmt,CI_low,CI_high) %>%
+  rename(
+    `Level`=Level,
+    `Pairs`=n_pairs,
+    `Mean Diff`=mean_diff,
+    `t-value`=t_stat,
+    `p-value`=p_value,
+    `CI Low`=CI_low,
+    `CI High`=CI_high
+  ) %>%
+  kable("html",escape=FALSE,digits=3,
+        caption="Attendance Paired t-Tests by Level",
+        align="lllllll") %>%
+  kable_styling(full_width=FALSE,position="center",
+                bootstrap_options=c("striped","hover"))
+
+att_combined_summary %>%
+  mutate(
+    sig=p_value<0.05,
+    p_value_fmt=ifelse(sig,
+                       cell_spec(round(p_value,4),"html",bold=TRUE,color="red"),
+                       cell_spec(round(p_value,4),"html"))
+  ) %>%
+  select(mean_diff,t_stat,df,p_value=p_value_fmt,CI_low,CI_high) %>%
+  rename(
+    `Mean Diff`=mean_diff,
+    `t-value`=t_stat,
+    `df`=df,
+    `p-value`=p_value,
+    `CI Low`=CI_low,
+    `CI High`=CI_high
+  ) %>%
+  kable("html",escape=FALSE,digits=3,
+        caption="Combined Attendance Paired t-Test",
+        align="llllll") %>%
+  kable_styling(full_width=FALSE,position="center",
+                bootstrap_options=c("striped","hover"))
+
+#enrollment 
+#define pre and post years for pairing
+data_prepost <- data_wide_attend %>%
+  filter(Year %in% c(2015,2016,2017,2020,2021,2022)) %>%
+  mutate(period = ifelse(Year <= 2017, "Pre", "Post"))
+enr_pairs <- data_prepost %>%
+  filter(!is.na(Enrollment)) %>%
+  mutate(year_pair = case_when(
+    Year==2015 ~ "pair1",
+    Year==2016 ~ "pair2",
+    Year==2017 ~ "pair3",
+    Year==2020 ~ "pair1",
+    Year==2021 ~ "pair2",
+    Year==2022 ~ "pair3"
+  )) %>%
+  select(Level, year_pair, period, Enrollment) %>%
+  pivot_wider(names_from=period, values_from=Enrollment) %>%
+  filter(!is.na(Pre) & !is.na(Post))
+
+#test by level and combined
+enr_results <- enr_pairs %>%
+  group_by(Level) %>%
+  summarise(
+    t_test = list(t.test(Pre, Post, paired=TRUE)),
+    n_pairs = n()
+  )
+enr_combined <- t.test(enr_pairs$Pre, enr_pairs$Post, paired=TRUE)
+
+#make them into nice tables
+enr_summary <- enr_results %>%
+  mutate(
+    tidy = map(t_test, broom::tidy)
+  ) %>%
+  unnest(tidy) %>%
+  mutate(
+    sig = p.value < 0.05,
+    p_value_fmt = ifelse(sig,
+                         cell_spec(round(p.value,4),"html",bold=TRUE,color="red"),
+                         cell_spec(round(p.value,4),"html")),
+    Level = factor(Level, levels = c("Elementary School", "Middle School", "High School"))
+  ) %>%
+  arrange(Level) %>%
+  select(Level, n_pairs, estimate, statistic, p_value_fmt, conf.low, conf.high) %>%
+  rename(
+    `Level` = Level,
+    `Pairs` = n_pairs,
+    `Mean Diff` = estimate,
+    `t-value` = statistic,
+    `p-value` = p_value_fmt,
+    `CI Low` = conf.low,
+    `CI High` = conf.high
+  ) %>%
+  kable("html", escape = FALSE, digits = 3, caption = "Enrollment Paired t-Tests by Level",
+        align = "lllllll") %>%
+  kable_styling(full_width = FALSE, position = "center",
+                bootstrap_options = c("striped", "hover"))
+enr_summary
+
+enr_combined_summary <- tibble(
+  mean_diff = enr_combined$estimate,
+  t_stat = enr_combined$statistic,
+  df = enr_combined$parameter,
+  p_value = enr_combined$p.value,
+  CI_low = enr_combined$conf.int[1],
+  CI_high = enr_combined$conf.int[2]
+) %>%
+  mutate(
+    sig = p_value < 0.05,
+    p_value_fmt = ifelse(sig,
+                         cell_spec(round(p_value, 4), "html", bold = TRUE, color = "red"),
+                         cell_spec(round(p_value, 4), "html"))
+  ) %>%
+  select(mean_diff, t_stat, df, p_value = p_value_fmt, CI_low, CI_high) %>%
+  rename(
+    `Mean Diff` = mean_diff,
+    `t-value` = t_stat,
+    `df` = df,
+    `p-value` = p_value,
+    `CI Low` = CI_low,
+    `CI High` = CI_high
+  ) %>%
+  kable("html", escape = FALSE, digits = 3, caption = "Combined Enrollment Paired t-Test", align = "llllll") %>%
+  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover"))
+enr_combined_summary
+```
 ---
 
 # 6. Discussion
