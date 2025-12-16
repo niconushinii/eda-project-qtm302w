@@ -14,12 +14,12 @@ Following best practices for reproducible research, our notebook includes:
 - Data cleaning and restructuring into tidy long-form tables  
 - Visual exploration of **pre- and post-filter distributions**  
 - Descriptive statistics (mean, median, variance, quartiles, IQR)  
-- Correlation and regression modeling to test variable relationships  
+- Correlation and regression and t-test modelings to test variable relationships  
 - Interactive visualizations using `plotly` for longitudinal comparisons  
 
 ### List of Platforms/Languages 
 - R 
-- libraries: plotly
+- libraries: tidyverse, plotly, lubridate, ggpubr
 
 ---
 
