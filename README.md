@@ -95,9 +95,11 @@ eda-project-qtm302w/
 │   └── tendency_attend.csv
 │
 ├── renv/                              # R package environment (for reproducibility)
+│   ├── .Rhistory
 │   ├── activate.R
-│   ├── settings.json
-│   └── .gitignore
+│   ├── gitignore.txt
+│   ├── renv.R
+│   └── settings.json
 │
 ├── EDA-project.Rmd                    # Main analysis notebook (RMarkdown)
 ├── EDA-project.html                   # Rendered HTML report
